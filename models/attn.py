@@ -5,12 +5,13 @@ import torch.nn.functional as F
 import numpy as np
 
 from math import sqrt
-from utils.masking import FullMask, LengthMask
+from utils.masking import FullMask, LengthMask, TriangularCausalMask, ProbMask
 
 class FullAttention(nn.Module):
-    def __init__(self, factor=5, scale=None, attention_dropout=0.1):
+    def __init__(self, mask_flag=True, factor=5, scale=None, attention_dropout=0.1):
         super(FullAttention, self).__init__()
         self.scale = scale
+        self.mask_flag = mask_flag
         self.dropout = nn.Dropout(attention_dropout)
         
     def forward(self, queries, keys, values, attn_mask, query_lengths,
@@ -22,9 +23,14 @@ class FullAttention(nn.Module):
 
         # Compute the unnormalized attention and apply the masks
         QK = torch.einsum("nlhe,nshe->nhls", queries, keys)
-        if not attn_mask.all_ones:
-            QK = QK + attn_mask.additive_matrix
-        QK = QK + key_lengths.additive_matrix[:, None, None]
+        if self.mask_flag:
+            if attn_mask is None:
+                attn_mask = TriangularCausalMask(L, device=queries.device)
+
+            if not attn_mask.all_ones:
+                QK = QK + attn_mask.additive_matrix
+            
+            QK = QK + key_lengths.additive_matrix[:, None, None]
 
         # Compute the attention and the weighted average
         A = self.dropout(torch.softmax(scale * QK, dim=-1))
@@ -34,10 +40,11 @@ class FullAttention(nn.Module):
         return V.contiguous()
 
 class ProbAttention(nn.Module):
-    def __init__(self, factor=5, scale=None, attention_dropout=0.1):
+    def __init__(self, mask_flag=True, factor=5, scale=None, attention_dropout=0.1):
         super(ProbAttention, self).__init__()
         self.factor = factor
         self.scale = scale
+        self.mask_flag = mask_flag
         self.dropout = nn.Dropout(attention_dropout)
 
     def _prob_QK(self, Q, K, sample_k, n_top):
@@ -63,11 +70,11 @@ class ProbAttention(nn.Module):
 
         return Q_K, M_top
 
-    def _get_initial_context(self, V, L_Q, attn_mask):
+    def _get_initial_context(self, V, L_Q):
         B, H, L_V, D = V.shape
-        if not attn_mask:
+        if not self.mask_flag:
             V_sum = V.sum(dim=-2)
-            contex = V_sum.unsqueeze(-2).expand(B, H, L_Q, V_sum.shape[-1])
+            contex = V_sum.unsqueeze(-2).expand(B, H, L_Q, V_sum.shape[-1]).clone()
         else: # use mask
             assert(L_Q == L_V) # requires that L_Q == L_V, i.e. for self-attention only
             contex = V.cumsum(dim=-1)
@@ -75,14 +82,10 @@ class ProbAttention(nn.Module):
 
     def _update_context(self, context_in, V, scores, index, L_Q, attn_mask):
         B, H, L_V, D = V.shape
-        if attn_mask:
-            _mask = torch.ones(L_Q, scores.shape[-1]).cuda().triu(1).byte()
-            _mask_ex = _mask[None, None, :].expand(B, H, L_Q, scores.shape[-1])
-            indicator = _mask_ex[torch.arange(B)[:, None, None],
-                                 torch.arange(H)[None, :, None],
-                                 index, :].cuda()
-                                 
-            scores.masked_fill_(indicator.view(scores.shape)>0, -np.inf)
+
+        if self.mask_flag:
+            attn_mask = ProbMask(B, H, L_Q, index, scores, device=V.device)
+            scores = scores + attn_mask.additive_matrix
 
         attn = nn.Softmax(dim=-1)(scores)
 
@@ -91,7 +94,7 @@ class ProbAttention(nn.Module):
                    index, :] = torch.matmul(attn, V)
         return context_in
 
-    def forward(self, queries, keys, values, attn_mask=False, query_lengths=None,
+    def forward(self, queries, keys, values, attn_mask, query_lengths=None,
                 key_lengths=None):
         B, L, H, D = queries.shape
         _, S, _, _ = keys.shape
@@ -109,10 +112,11 @@ class ProbAttention(nn.Module):
         if scale is not None:
             scores_top = scores_top * scale
         # get the context
-        context = self._get_initial_context(values, L, attn_mask)
+        context = self._get_initial_context(values, L)
         # update the context with selected top_k queries
         context = self._update_context(context, values, scores_top, index, L, attn_mask)
-        return context
+        
+        return context.contiguous()
 
 
 class AttentionLayer(nn.Module):
