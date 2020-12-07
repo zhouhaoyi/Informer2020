@@ -64,17 +64,6 @@ class Decoder(nn.Module):
 
     def forward(self, x, memory, x_mask=None, x_length_mask=None,
                 memory_mask=None, memory_length_mask=None):
-        # Normalize the masks
-        # B = x.shape[0]
-        # L = x.shape[1]
-        # L_prime = memory.shape[1]
-        # x_mask = x_mask or TriangularCausalMask(L, device=x.device)
-        # x_length_mask = x_length_mask  or \
-        #     LengthMask(x.new_full((B,), L, dtype=torch.int64))
-        # memory_mask = memory_mask or FullMask(L, L_prime, device=x.device)
-        # memory_length_mask = memory_length_mask or \
-        #     LengthMask(x.new_full((B,), L_prime, dtype=torch.int64))
-
         # Apply all the transformer decoders
         for layer in self.layers:
             x = layer(x, memory, x_mask=x_mask, x_length_mask=x_length_mask,

@@ -41,7 +41,7 @@ class EncoderLayer(nn.Module):
         # x [B, L, D]
         B = x.shape[0]
         L = x.shape[1]
-        attn_mask = attn_mask or FullMask(L, device=x.device)# TriangularCausalMask(L, device=x.device)
+        attn_mask = attn_mask or FullMask(L, device=x.device) # TriangularCausalMask(L, device=x.device)
         length_mask = length_mask or \
             LengthMask(x.new_full((B,), L, dtype=torch.int64), device=x.device)
 
@@ -69,11 +69,6 @@ class Encoder(nn.Module):
 
     def forward(self, x, attn_mask=None, length_mask=None):
         # x [B, L, D]
-        # B = x.shape[0]
-        # L = x.shape[1]
-        # attn_mask = attn_mask or TriangularCausalMask(L, device=x.device)
-        # length_mask = length_mask or \
-        #     LengthMask(x.new_full((B,), L, dtype=torch.int64), device=x.device)
 
         if self.conv_layers is not None:
             for attn_layer, conv_layer in zip(self.attn_layers, self.conv_layers):

@@ -1,18 +1,4 @@
-"""Create types of masks to be used in various places in transformers.
-
-- Full mask (any key masked for any query)
-- Length mask (masking out everything after a length)
-- Triangular causal mask (mask any key succeeding the query)
-
-All mask implementations should provide a single interface to be used by the
-transformer layers and the attention layers.
-
-NOTE: In all cases the value 1 or True signifies what should be kept and not
-      what should be deleted/masked.
-"""
-
 import torch
-
 
 class BaseMask(object):
     @property
@@ -45,10 +31,6 @@ class BaseMask(object):
         if not hasattr(self, "_lengths"):
             with torch.no_grad():
                 lengths = self.bool_matrix.long().sum(dim=-1)
-                # make sure that the mask starts with 1s and continues with 0s
-                # this should be changed to something more efficient, however,
-                # I chose simplicity over efficiency since the LengthMask class
-                # will be used anyway (and the result is cached)
                 m = self.bool_matrix.view(-1, self.shape[-1])
                 for i, l in enumerate(lengths.view(-1)):
                     if not torch.all(m[i, :l]):
@@ -109,23 +91,6 @@ class BaseMask(object):
 
 
 class FullMask(BaseMask):
-    """Thin wrapper over a pytorch tensor that provides the BaseMask
-    interface.
-
-    The arguments can be given both by keyword arguments and positional
-    arguments. To imitate function overloading, the constructor checks the type
-    of the first argument and if it is a tensor it treats it as the mask.
-    otherwise it assumes that it was the N argument.
-
-    Arguments
-    ---------
-        mask: The mask as a PyTorch tensor.
-        N: The rows of the all True mask to be created if the mask argument is
-           not provided.
-        M: The columns of the all True mask to be created if the mask argument
-           is not provided. If N is given M defaults to N.
-        device: The device to create the mask in (defaults to cpu)
-    """
     def __init__(self, mask=None, N=None, M=None, device="cpu"):
         # mask is a tensor so we ignore N and M
         if mask is not None and isinstance(mask, torch.Tensor):
@@ -156,16 +121,6 @@ class FullMask(BaseMask):
 
 
 class LengthMask(BaseMask):
-    """Provide a BaseMask interface for lengths. Mostly to be used with
-    sequences of different lengths.
-    
-    Arguments
-    ---------
-        lengths: The lengths as a PyTorch long tensor
-        max_len: The maximum length for the mask (defaults to lengths.max())
-        device: The device to be used for creating the masks (defaults to
-                lengths.device)
-    """
     def __init__(self, lengths, max_len=None, device=None):
         self._device = device or lengths.device
         with torch.no_grad():
@@ -186,14 +141,23 @@ class LengthMask(BaseMask):
 
 
 class TriangularCausalMask(LengthMask):
-    """A square matrix with everything masked out above the diagonal.
-    
-    Arguments
-    ---------
-        N: The size of the matrix
-        device: The device to create the mask in (defaults to cpu)
-    """
     def __init__(self, N, device="cpu"):
         lengths = torch.arange(1, N+1, device=device)
         super(TriangularCausalMask, self).__init__(lengths, N, device)
         self._lower_triangular = True
+
+class ProbMask(LengthMask):
+    def __init__(self, B, H, L, index, scores, device="cpu"):
+        lengths = torch.arange(1, L+1, device=device)
+        super(ProbMask, self).__init__(lengths, L, device)
+        
+        _mask = torch.ones(L, scores.shape[-1]).to(device).triu(1).byte()
+        _mask_ex = _mask[None, None, :].expand(B, H, L, scores.shape[-1])
+        indicator = _mask_ex[torch.arange(B)[:, None, None],
+                             torch.arange(H)[None, :, None],
+                             index, :].to(device)
+        self._bool_matrix = (indicator.view(scores.shape)<=0).to(device)
+    
+    @property
+    def bool_matrix(self):
+        return self._bool_matrix

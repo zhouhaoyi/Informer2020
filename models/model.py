@@ -26,7 +26,7 @@ class Informer(nn.Module):
         self.encoder = Encoder(
             [
                 EncoderLayer(
-                    AttentionLayer(Attn(factor, attention_dropout=dropout), 
+                    AttentionLayer(Attn(False, factor, attention_dropout=dropout), 
                                 d_model, n_heads),
                     d_model,
                     d_ff,
@@ -45,8 +45,10 @@ class Informer(nn.Module):
         self.decoder = Decoder(
             [
                 DecoderLayer(
-                    AttentionLayer(FullAttention(), d_model, n_heads),
-                    AttentionLayer(FullAttention(), d_model, n_heads),
+                    AttentionLayer(FullAttention(True, factor, attention_dropout=dropout), 
+                                d_model, n_heads),
+                    AttentionLayer(FullAttention(False, factor, attention_dropout=dropout), 
+                                d_model, n_heads),
                     d_model,
                     d_ff,
                     dropout=dropout,
@@ -61,13 +63,6 @@ class Informer(nn.Module):
     def forward(self, x_enc, x_mark_enc, x_dec, x_mark_dec, 
                 enc_self_mask=None, dec_self_mask=None, dec_enc_mask=None, 
                 enc_len_mask=None, dec_len_mask=None):
-        # L1 = x_enc.shape[1]; L2 = x_dec.shape[1]; device = x_enc.device
-        # enc_self_mask = False if self.attn=='prob' else None # enc_self_mask = enc_self_mask or (False if self.attn=='prob' else TriangularCausalMask(L1, device=device))
-        # dec_self_mask = dec_self_mask or TriangularCausalMask(L2, device=device)# (False if self.attn=='prob' else TriangularCausalMask(L2, device=device))
-        # dec_enc_mask = dec_enc_mask or FullMask(L1, L2, device=device)
-
-        enc_self_mask = False if self.attn=='prob' else None
-
         enc_out = self.enc_embedding(x_enc, x_mark_enc)
         enc_out = self.encoder(enc_out, attn_mask=enc_self_mask, length_mask=enc_len_mask)
 
