@@ -2,8 +2,6 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 
-from utils.masking import FullMask, LengthMask, TriangularCausalMask
-
 class DecoderLayer(nn.Module):
     def __init__(self, self_attention, cross_attention, d_model, d_ff=None,
                  dropout=0.1, activation="relu"):
@@ -19,37 +17,18 @@ class DecoderLayer(nn.Module):
         self.dropout = nn.Dropout(dropout)
         self.activation = F.relu if activation == "relu" else F.gelu
 
-    def forward(self, x, memory, x_mask=None, x_length_mask=None,
-                memory_mask=None, memory_length_mask=None):
-        # Normalize the masks
-        B = x.shape[0]
-        L = x.shape[1]
-        L_prime = memory.shape[1]
-        x_mask = x_mask or TriangularCausalMask(L, device=x.device)
-        x_length_mask = x_length_mask  or \
-            LengthMask(x.new_full((B,), L, dtype=torch.int64))
-        memory_mask = memory_mask or FullMask(L, L_prime, device=x.device)
-        memory_length_mask = memory_length_mask or \
-            LengthMask(x.new_full((B,), L_prime, dtype=torch.int64))
-
-        # First apply the self attention and add it to the input
+    def forward(self, x, cross, x_mask=None, cross_mask=None):
         x = x + self.dropout(self.self_attention(
             x, x, x,
-            attn_mask=x_mask,
-            query_lengths=x_length_mask,
-            key_lengths=x_length_mask
+            attn_mask=x_mask
         ))
         x = self.norm1(x)
 
-        # Secondly apply the cross attention and add it to the previous output
         x = x + self.dropout(self.cross_attention(
-            x, memory, memory,
-            attn_mask=memory_mask,
-            query_lengths=x_length_mask,
-            key_lengths=memory_length_mask
+            x, cross, cross,
+            attn_mask=cross_mask
         ))
 
-        # Finally run the fully connected part of the layer
         y = x = self.norm2(x)
         y = self.dropout(self.activation(self.conv1(y.transpose(-1,1))))
         y = self.dropout(self.conv2(y).transpose(-1,1))
@@ -62,15 +41,10 @@ class Decoder(nn.Module):
         self.layers = nn.ModuleList(layers)
         self.norm = norm_layer
 
-    def forward(self, x, memory, x_mask=None, x_length_mask=None,
-                memory_mask=None, memory_length_mask=None):
-        # Apply all the transformer decoders
+    def forward(self, x, cross, x_mask=None, cross_mask=None):
         for layer in self.layers:
-            x = layer(x, memory, x_mask=x_mask, x_length_mask=x_length_mask,
-                      memory_mask=memory_mask,
-                      memory_length_mask=memory_length_mask)
+            x = layer(x, cross, x_mask=x_mask, cross_mask=cross_mask)
 
-        # Apply the normalization if needed
         if self.norm is not None:
             x = self.norm(x)
 
