@@ -5,7 +5,7 @@ import torch.nn.functional as F
 import numpy as np
 
 from math import sqrt
-from utils.masking import FullMask, LengthMask, TriangularCausalMask, ProbMask
+from utils.masking import TriangularCausalMask, ProbMask
 
 class FullAttention(nn.Module):
     def __init__(self, mask_flag=True, factor=5, scale=None, attention_dropout=0.1):
@@ -14,29 +14,21 @@ class FullAttention(nn.Module):
         self.mask_flag = mask_flag
         self.dropout = nn.Dropout(attention_dropout)
         
-    def forward(self, queries, keys, values, attn_mask, query_lengths,
-                key_lengths):
-        # Extract some shapes and compute the temperature
+    def forward(self, queries, keys, values, attn_mask):
         B, L, H, E = queries.shape
         _, S, _, D = values.shape
         scale = self.scale or 1./sqrt(E)
 
-        # Compute the unnormalized attention and apply the masks
-        QK = torch.einsum("nlhe,nshe->nhls", queries, keys)
+        scores = torch.einsum("blhe,bshe->bhls", queries, keys)
         if self.mask_flag:
             if attn_mask is None:
-                attn_mask = TriangularCausalMask(L, device=queries.device)
+                attn_mask = TriangularCausalMask(B, L, device=queries.device)
 
-            if not attn_mask.all_ones:
-                QK = QK + attn_mask.additive_matrix
-            
-            QK = QK + key_lengths.additive_matrix[:, None, None]
+            scores.masked_fill_(attn_mask.mask, -np.inf)
 
-        # Compute the attention and the weighted average
-        A = self.dropout(torch.softmax(scale * QK, dim=-1))
-        V = torch.einsum("nhls,nshd->nlhd", A, values)
+        A = self.dropout(torch.softmax(scale * scores, dim=-1))
+        V = torch.einsum("bhls,bshd->blhd", A, values)
 
-        # Make sure that what we return is contiguous
         return V.contiguous()
 
 class ProbAttention(nn.Module):
@@ -85,17 +77,16 @@ class ProbAttention(nn.Module):
 
         if self.mask_flag:
             attn_mask = ProbMask(B, H, L_Q, index, scores, device=V.device)
-            scores = scores + attn_mask.additive_matrix
+            scores.masked_fill_(attn_mask.mask, -np.inf)
 
-        attn = nn.Softmax(dim=-1)(scores)
+        attn = torch.softmax(scores, dim=-1) # nn.Softmax(dim=-1)(scores)
 
         context_in[torch.arange(B)[:, None, None],
                    torch.arange(H)[None, :, None],
                    index, :] = torch.matmul(attn, V)
         return context_in
 
-    def forward(self, queries, keys, values, attn_mask, query_lengths=None,
-                key_lengths=None):
+    def forward(self, queries, keys, values, attn_mask):
         B, L, H, D = queries.shape
         _, S, _, _ = keys.shape
 
@@ -124,7 +115,6 @@ class AttentionLayer(nn.Module):
                  d_values=None):
         super(AttentionLayer, self).__init__()
 
-        # Fill d_keys and d_values
         d_keys = d_keys or (d_model//n_heads)
         d_values = d_values or (d_model//n_heads)
 
@@ -135,27 +125,20 @@ class AttentionLayer(nn.Module):
         self.out_projection = nn.Linear(d_values * n_heads, d_model)
         self.n_heads = n_heads
 
-    def forward(self, queries, keys, values, attn_mask, query_lengths,
-                key_lengths):
-        # Extract the dimensions into local variables
+    def forward(self, queries, keys, values, attn_mask):
         B, L, _ = queries.shape
         _, S, _ = keys.shape
         H = self.n_heads
 
-        # Project the queries/keys/values
         queries = self.query_projection(queries).view(B, L, H, -1)
         keys = self.key_projection(keys).view(B, S, H, -1)
         values = self.value_projection(values).view(B, S, H, -1)
 
-        # Compute the attention
-        new_values = self.inner_attention(
+        out = self.inner_attention(
             queries,
             keys,
             values,
-            attn_mask,
-            query_lengths,
-            key_lengths
+            attn_mask
         ).view(B, L, -1)
 
-        # Project the output and return
-        return self.out_projection(new_values)
+        return self.out_projection(out)

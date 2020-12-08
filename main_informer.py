@@ -27,8 +27,8 @@ parser.add_argument('--d_ff', type=int, default=1024, help='dimension of fcn')
 parser.add_argument('--factor', type=int, default=5, help='prob sparse factor')
 
 parser.add_argument('--dropout', type=float, default=0.1, help='dropout')
-parser.add_argument('--attn', type=str, default='prob', help='attention')
-parser.add_argument('--embed', type=str, default='fixed', help='embedding type')
+parser.add_argument('--attn', type=str, default='prob', help='attention [prob, full]')
+parser.add_argument('--embed', type=str, default='fixed', help='embedding type [fixed, learned]')
 parser.add_argument('--activation', type=str, default='gelu',help='activation')
 parser.add_argument('--num_workers', type=int, default=0, help='data loader num workers')
 
@@ -39,7 +39,7 @@ parser.add_argument('--patience', type=int, default=7, help='early stopping pati
 parser.add_argument('--learning_rate', type=float, default=0.0001, help='optimizer learning rate')
 parser.add_argument('--des', type=str, default='test',help='exp description')
 parser.add_argument('--loss', type=str, default='mse',help='loss function')
-
+parser.add_argument('--lradj', type=str, default='type1',help='adjust learning rate')
 
 parser.add_argument('--use_gpu', type=bool, default=True, help='use gpu')
 parser.add_argument('--gpu', type=int, default=0, help='gpu')
@@ -61,9 +61,9 @@ if args.data in data_parser.keys():
 Exp = Exp_Informer
 
 for ii in range(args.itr):
-    setting = '{}_{}_ft{}_sl{}_ll{}_pl{}_dm{}_nh{}_el{}_dl{}_df{}_at{}_{}_{}'.format(args.model, args.data, args.features, 
+    setting = '{}_{}_ft{}_sl{}_ll{}_pl{}_dm{}_nh{}_el{}_dl{}_df{}_at{}_eb{}_{}_{}'.format(args.model, args.data, args.features, 
                 args.seq_len, args.label_len, args.pred_len,
-                args.d_model, args.n_heads, args.e_layers, args.d_layers, args.d_ff, args.attn, args.des, ii)
+                args.d_model, args.n_heads, args.e_layers, args.d_layers, args.d_ff, args.attn, args.embed, args.des, ii)
 
     exp = Exp(args)
     print('>>>>>>>start training : {}>>>>>>>>>>>>>>>>>>>>>>>>>>'.format(setting))

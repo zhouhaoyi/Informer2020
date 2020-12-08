@@ -2,7 +2,7 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 
-from utils.masking import FullMask, LengthMask, TriangularCausalMask
+from utils.masking import TriangularCausalMask, ProbMask
 from models.encoder import Encoder, EncoderLayer, ConvLayer
 from models.decoder import Decoder, DecoderLayer
 from models.attn import FullAttention, ProbAttention, AttentionLayer
@@ -61,14 +61,12 @@ class Informer(nn.Module):
         self.projection = nn.Linear(d_model, c_out, bias=True)
         
     def forward(self, x_enc, x_mark_enc, x_dec, x_mark_dec, 
-                enc_self_mask=None, dec_self_mask=None, dec_enc_mask=None, 
-                enc_len_mask=None, dec_len_mask=None):
+                enc_self_mask=None, dec_self_mask=None, dec_enc_mask=None):
         enc_out = self.enc_embedding(x_enc, x_mark_enc)
-        enc_out = self.encoder(enc_out, attn_mask=enc_self_mask, length_mask=enc_len_mask)
+        enc_out = self.encoder(enc_out, attn_mask=enc_self_mask)
 
         dec_out = self.dec_embedding(x_dec, x_mark_dec)
-        dec_out = self.decoder(dec_out, enc_out, x_mask=dec_self_mask, x_length_mask=enc_len_mask, 
-                                                memory_mask=dec_enc_mask, memory_length_mask=dec_len_mask)
+        dec_out = self.decoder(dec_out, enc_out, x_mask=dec_self_mask, cross_mask=dec_enc_mask)
         dec_out = self.projection(dec_out)
         
         return dec_out[:,-self.pred_len:,:] # [B, L, D]
