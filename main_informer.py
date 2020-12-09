@@ -11,11 +11,11 @@ parser.add_argument('--data', type=str, required=True, default='ETTh1', help='da
 parser.add_argument('--root_path', type=str, default='./data/ETT/', help='root path of the data file')
 parser.add_argument('--data_path', type=str, default='ETTh1.csv', help='location of the data file')    
 parser.add_argument('--features', type=str, default='M', help='features')
-parser.add_argument('--target', type=str, default='t_T', help='target feature')
+parser.add_argument('--target', type=str, default='OT', help='target feature')
 
-parser.add_argument('--seq_len', type=int, default=336, help='input series length')
-parser.add_argument('--label_len', type=int, default=168, help='help series length')
-parser.add_argument('--pred_len', type=int, default=168, help='predict series length')
+parser.add_argument('--seq_len', type=int, default=96, help='input series length')
+parser.add_argument('--label_len', type=int, default=48, help='help series length')
+parser.add_argument('--pred_len', type=int, default=24, help='predict series length')
 parser.add_argument('--enc_in', type=int, default=7, help='encoder input size')
 parser.add_argument('--dec_in', type=int, default=7, help='decoder input size')
 parser.add_argument('--c_out', type=int, default=7, help='output size')
@@ -33,13 +33,13 @@ parser.add_argument('--activation', type=str, default='gelu',help='activation')
 parser.add_argument('--num_workers', type=int, default=0, help='data loader num workers')
 
 parser.add_argument('--itr', type=int, default=2, help='each params run iteration')
-parser.add_argument('--train_epochs', type=int, default=10, help='train epochs')
+parser.add_argument('--train_epochs', type=int, default=6, help='train epochs')
 parser.add_argument('--batch_size', type=int, default=32, help='input data batch size')
-parser.add_argument('--patience', type=int, default=4, help='early stopping patience')
+parser.add_argument('--patience', type=int, default=3, help='early stopping patience')
 parser.add_argument('--learning_rate', type=float, default=0.0001, help='optimizer learning rate')
 parser.add_argument('--des', type=str, default='test',help='exp description')
 parser.add_argument('--loss', type=str, default='mse',help='loss function')
-parser.add_argument('--lradj', type=str, default='type2',help='adjust learning rate')
+parser.add_argument('--lradj', type=str, default='type1',help='adjust learning rate')
 
 parser.add_argument('--use_gpu', type=bool, default=True, help='use gpu')
 parser.add_argument('--gpu', type=int, default=0, help='gpu')
@@ -47,9 +47,9 @@ parser.add_argument('--gpu', type=int, default=0, help='gpu')
 args = parser.parse_args()
 
 data_parser = {
-    'ETTh1':{'data':'ETTh1.csv','T':'t_T','M':[7,7,7],'S':[1,1,1]},
-    'ETTh2':{'data':'ETTh2.csv','T':'t_T','M':[7,7,7],'S':[1,1,1]},
-    'ETTm1':{'data':'ETTm1.csv','T':'t_T','M':[7,7,7],'S':[1,1,1]},
+    'ETTh1':{'data':'ETTh1.csv','T':'OT','M':[7,7,7],'S':[1,1,1]},
+    'ETTh2':{'data':'ETTh2.csv','T':'OT','M':[7,7,7],'S':[1,1,1]},
+    'ETTm1':{'data':'ETTm1.csv','T':'OT','M':[7,7,7],'S':[1,1,1]},
 }
 if args.data in data_parser.keys():
     data_info = data_parser[args.data]

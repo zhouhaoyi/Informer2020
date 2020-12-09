@@ -95,6 +95,7 @@ class Exp_Informer(Exp_Basic):
         for i, (batch_x,batch_y,batch_x_mark,batch_y_mark) in enumerate(vali_loader):
             batch_x = batch_x.double().to(self.device)
             batch_y = batch_y.double()
+            
             batch_x_mark = batch_x_mark.double().to(self.device)
             batch_y_mark = batch_y_mark.double().to(self.device)
 
@@ -118,6 +119,7 @@ class Exp_Informer(Exp_Basic):
     def train(self, setting):
         train_data, train_loader = self._get_data(flag = 'train')
         vali_data, vali_loader = self._get_data(flag = 'val')
+        test_data, test_loader = self._get_data(flag = 'test')
 
         path = './checkpoints/'+setting
         if not os.path.exists(path):
@@ -143,6 +145,7 @@ class Exp_Informer(Exp_Basic):
                 
                 batch_x = batch_x.double().to(self.device)
                 batch_y = batch_y.double()
+                
                 batch_x_mark = batch_x_mark.double().to(self.device)
                 batch_y_mark = batch_y_mark.double().to(self.device)
 
@@ -169,8 +172,10 @@ class Exp_Informer(Exp_Basic):
 
             train_loss = np.average(train_loss)
             vali_loss = self.vali(vali_data, vali_loader, criterion)
-            print("Epoch: {0}, Steps: {1} | Train Loss: {2:.7f} Vali Loss: {3:.7f}".format(
-                epoch + 1, train_steps, train_loss, vali_loss))
+            test_loss = self.vali(test_data, test_loader, criterion)
+
+            print("Epoch: {0}, Steps: {1} | Train Loss: {2:.7f} Vali Loss: {3:.7f} Test Loss: {4:.7f}".format(
+                epoch + 1, train_steps, train_loss, vali_loss, test_loss))
             early_stopping(vali_loss, self.model, path)
             if early_stopping.early_stop:
                 print("Early stopping")
@@ -203,7 +208,7 @@ class Exp_Informer(Exp_Basic):
             # encoder - decoder
             outputs = self.model(batch_x, batch_x_mark, dec_inp, batch_y_mark)
             batch_y = batch_y[:,-self.args.pred_len:,:].to(self.device)
-
+            
             pred = outputs.detach().cpu().numpy()#.squeeze()
             true = batch_y.detach().cpu().numpy()#.squeeze()
             

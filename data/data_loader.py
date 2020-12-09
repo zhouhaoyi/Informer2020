@@ -12,7 +12,7 @@ warnings.filterwarnings('ignore')
 class Dataset_ETT_hour(Dataset):
     def __init__(self, root_path, flag='train', size=None, 
                  features='S', data_path='ETTh1.csv', 
-                 target='t_T', scale=True):
+                 target='OT', scale=True):
         # size [seq_len, label_len pred_len]
         # info
         if size == None:
@@ -88,7 +88,7 @@ class Dataset_ETT_hour(Dataset):
 class Dataset_ETT_minute(Dataset):
     def __init__(self, root_path, flag='train', size=None, 
                  features='S', data_path='ETTm1.csv', 
-                 target='t_T', scale=True):
+                 target='OT', scale=True):
         # size [seq_len, label_len pred_len]
         # info
         if size == None:
