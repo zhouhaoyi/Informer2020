@@ -6,7 +6,7 @@ This is the origin pytorch implementation of Informer in the following paper:
 [Informer: Beyond Efficient Transformer for Long Sequence Time-Series Forecasting](https://github.com/cookieminions/Informer2020)
 
 <p align="center">
-<img src="./img/Informer.png" height = "400" alt="" align=center />
+<img src="./img/Informer.png" height = "360" alt="" align=center />
 <br><br>
 <b>Figure 1.</b> Informer.
 </p>
@@ -64,7 +64,7 @@ More parameter information can be founded in `main_informer.py`.
 </p>
 
 <p align="center">
-<img src="./img/result_multivariate.png" height = "270" alt="" align=center />
+<img src="./img/result_multivariate.png" height = "250" alt="" align=center />
 <br><br>
 <b>Figure 4.</b> Multivariate forecasting results.
 </p>
