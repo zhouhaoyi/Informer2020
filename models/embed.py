@@ -56,14 +56,15 @@ class FixedEmbedding(nn.Module):
         return self.emb(x).detach()
 
 class TemporalEmbedding(nn.Module):
-    def __init__(self, d_model, embed_type='fixed'):
+    def __init__(self, d_model, embed_type='fixed', data='ETTh'):
         super(TemporalEmbedding, self).__init__()
 
         minute_size = 4; hour_size = 24
         weekday_size = 7; day_size = 32; month_size = 13
 
         Embed = FixedEmbedding if embed_type=='fixed' else nn.Embedding
-        # self.minute_embed = nn.Embedding(minute_size, d_model)
+        if data=='ETTm':
+            self.minute_embed = Embed(minute_size, d_model)
         self.hour_embed = Embed(hour_size, d_model)
         self.weekday_embed = Embed(weekday_size, d_model)
         self.day_embed = Embed(day_size, d_model)
@@ -72,21 +73,21 @@ class TemporalEmbedding(nn.Module):
     def forward(self, x):
         x = x.long()
         
-        # minute_x = self.minute_embed(x[:,:,4])
+        minute_x = self.minute_embed(x[:,:,4]) if hasattr(self, 'minute_embed') else 0.
         hour_x = self.hour_embed(x[:,:,3])
         weekday_x = self.weekday_embed(x[:,:,2])
         day_x = self.day_embed(x[:,:,1])
         month_x = self.month_embed(x[:,:,0])
         
-        return hour_x + weekday_x + day_x + month_x # + minute_x
+        return hour_x + weekday_x + day_x + month_x + minute_x
 
 class DataEmbedding(nn.Module):
-    def __init__(self, c_in, d_model, embed_type='fixed', dropout=0.1):
+    def __init__(self, c_in, d_model, embed_type='fixed', data='ETTh', dropout=0.1):
         super(DataEmbedding, self).__init__()
 
         self.value_embedding = TokenEmbedding(c_in=c_in, d_model=d_model)
         self.position_embedding = PositionalEmbedding(d_model=d_model)
-        self.temporal_embedding = TemporalEmbedding(d_model=d_model, embed_type=embed_type)
+        self.temporal_embedding = TemporalEmbedding(d_model=d_model, embed_type=embed_type, data=data)
 
         self.dropout = nn.Dropout(p=dropout)
 

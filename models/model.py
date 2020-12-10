@@ -11,15 +11,15 @@ from models.embed import DataEmbedding
 class Informer(nn.Module):
     def __init__(self, enc_in, dec_in, c_out, seq_len, label_len, out_len, 
                 factor=5, d_model=512, n_heads=8, e_layers=3, d_layers=2, d_ff=512, 
-                dropout=0.0, attn='prob', embed='fixed', activation='gelu', 
+                dropout=0.0, attn='prob', embed='fixed', data='ETTh', activation='gelu', 
                 device=torch.device('cuda:0')):
         super(Informer, self).__init__()
         self.pred_len = out_len
         self.attn = attn
 
         # Encoding
-        self.enc_embedding = DataEmbedding(enc_in, d_model, embed, dropout)
-        self.dec_embedding = DataEmbedding(dec_in, d_model, embed, dropout)
+        self.enc_embedding = DataEmbedding(enc_in, d_model, embed, data, dropout)
+        self.dec_embedding = DataEmbedding(dec_in, d_model, embed, data, dropout)
         # Attention
         Attn = ProbAttention if attn=='prob' else FullAttention
         # Encoder
