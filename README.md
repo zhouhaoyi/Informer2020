@@ -28,7 +28,7 @@ pip install -r requirements.txt
 ## Data
 
 The ETDataset used in the paper can be download in [ETDataset](https://github.com/zhouhaoyi/ETDataset).
-The required data files should be put into `data/ETT/` folder. A deme slice of the ETT data is illustrated in the following figure.
+The required data files should be put into `data/ETT/` folder. A deme slice of the ETT data is illustrated in the following figure. Noted that the input of each dataset is zero-mean normalized in this implementation.
 
 <p align="center">
 <img src="./img/data.png" height = "168" alt="" align=center />
@@ -36,7 +36,6 @@ The required data files should be put into `data/ETT/` folder. A deme slice of t
 <b>Figure 2.</b> A demo of the ETT data.
 </p>
 
-In the experiments, the input of each dataset is zero-mean normalized.
 
 ## Usage
 Commands for training and testing the model with *ProbSparse* self-attention on Dataset ETTh1, ETTh2 and ETTm1 respectively:
