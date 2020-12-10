@@ -10,7 +10,7 @@ parser.add_argument('--model', type=str, required=True, default='informer',help=
 parser.add_argument('--data', type=str, required=True, default='ETTh1', help='data')
 parser.add_argument('--root_path', type=str, default='./data/ETT/', help='root path of the data file')
 parser.add_argument('--data_path', type=str, default='ETTh1.csv', help='location of the data file')    
-parser.add_argument('--features', type=str, default='M', help='features')
+parser.add_argument('--features', type=str, default='M', help='features [S, M]')
 parser.add_argument('--target', type=str, default='OT', help='target feature')
 
 parser.add_argument('--seq_len', type=int, default=96, help='input series length')

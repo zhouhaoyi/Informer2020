@@ -43,6 +43,7 @@ class Exp_Informer(Exp_Basic):
                 self.args.dropout, 
                 self.args.attn,
                 self.args.embed,
+                self.args.data[:-1],
                 self.args.activation,
                 self.device
             )
