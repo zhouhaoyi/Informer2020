@@ -2,8 +2,8 @@
 
 ---
 
-This is the origin pytorch implementation of Informer in the following paper: 
-[Informer: Beyond Efficient Transformer for Long Sequence Time-Series Forecasting](). Speical thanks to `Jieqi Peng`@[cookieminions](https://github.com/cookieminions) in building this repo.
+This is the origin Pytorch implementation of Informer in the following paper: 
+[Informer: Beyond Efficient Transformer for Long Sequence Time-Series Forecasting](). Special thanks to `Jieqi Peng`@[cookieminions](https://github.com/cookieminions) for building this repo.
 
 <p align="center">
 <img src=".\img\informer.png" height = "360" alt="" align=center />
@@ -20,15 +20,15 @@ This is the origin pytorch implementation of Informer in the following paper:
 - scikit_learn == 0.21.3
 - torch == 1.2.0
 
-Dependency can be installed using the following command:
+Dependencies can be installed using the following command:
 ```bash
 pip install -r requirements.txt
 ```
 
 ## Data
 
-The ETDataset used in the paper can be download in [ETDataset](https://github.com/zhouhaoyi/ETDataset).
-The required data files should be put into `data/ETT/` folder. A deme slice of the ETT data is illustrated in the following figure. Noted that the input of each dataset is zero-mean normalized in this implementation.
+The ETT dataset used in the paper can be download in the repo [ETDataset](https://github.com/zhouhaoyi/ETDataset).
+The required data files should be put into `data/ETT/` folder. A demo slice of the ETT data is illustrated in the following figure. Note that the input of each dataset is zero-mean normalized in this implementation.
 
 <p align="center">
 <img src="./img/data.png" height = "168" alt="" align=center />
