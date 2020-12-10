@@ -3,12 +3,12 @@
 ---
 
 This is the origin pytorch implementation of Informer in the following paper: 
-[Informer: Beyond Efficient Transformer for Long Sequence Time-Series Forecasting](https://github.com/cookieminions/Informer2020)
+[Informer: Beyond Efficient Transformer for Long Sequence Time-Series Forecasting](). Speical thanks to `Jieqi Peng`@[cookieminions](https://github.com/cookieminions) in building this repo.
 
 <p align="center">
-<img src="https://github.com/cookieminions/Informer2020/blob/dev/img/informer.png" height = "360" alt="" align=center />
+<img src=".\img\informer.png" height = "360" alt="" align=center />
 <br><br>
-<b>Figure 1.</b> Informer.
+<b>Figure 1.</b> The architecture of Informer.
 </p>
 
 ## Requeirements
@@ -27,8 +27,8 @@ pip install -r requirements.txt
 
 ## Data
 
-The ETDataset used in the paper can be download in [ETDataset](https://github.com/zhouhaoyi/ETDataset)
-The data files should be put into `data/ETT/` folder. A demo of the ETT data is illustrated as the following figure.
+The ETDataset used in the paper can be download in [ETDataset](https://github.com/zhouhaoyi/ETDataset).
+The required data files should be put into `data/ETT/` folder. A deme slice of the ETT data is illustrated in the following figure. Noted that the input of each dataset is zero-mean normalized in this implementation.
 
 <p align="center">
 <img src="./img/data.png" height = "168" alt="" align=center />
@@ -36,10 +36,9 @@ The data files should be put into `data/ETT/` folder. A demo of the ETT data is 
 <b>Figure 2.</b> A demo of the ETT data.
 </p>
 
-In the experiments, the input of each dataset is zero-mean normalized.
 
 ## Usage
-Commands for training and testing the model with ProbSparse self-attention on Dataset ETTh1, ETTh2 and ETTm1 respectively:
+Commands for training and testing the model with *ProbSparse* self-attention on Dataset ETTh1, ETTh2 and ETTm1 respectively:
 
 ```bash
 # ETTh1
@@ -52,7 +51,7 @@ python -u main_informer.py --model informer --data ETTh2 --attn prob
 python -u main_informer.py --model informer --data ETTm1 --attn prob
 ```
 
-More parameter information can be founded in `main_informer.py`.
+More parameter information please refer to `main_informer.py`.
 
 
 ## Results
