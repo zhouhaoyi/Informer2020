@@ -6,7 +6,7 @@ This is the origin pytorch implementation of Informer in the following paper:
 [Informer: Beyond Efficient Transformer for Long Sequence Time-Series Forecasting](https://github.com/cookieminions/Informer2020)
 
 <p align="center">
-<img src="./img/Informer.png" height = "360" alt="" align=center />
+<img src="https://github.com/cookieminions/Informer2020/blob/dev/img/informer.png" height = "360" alt="" align=center />
 <br><br>
 <b>Figure 1.</b> Informer.
 </p>
