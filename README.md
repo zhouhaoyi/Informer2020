@@ -3,7 +3,7 @@
 ---
 
 This is the origin Pytorch implementation of Informer in the following paper: 
-[Informer: Beyond Efficient Transformer for Long Sequence Time-Series Forecasting](). Special thanks to `Jieqi Peng`@[cookieminions](https://github.com/cookieminions) for building this repo.
+[Informer: Beyond Efficient Transformer for Long Sequence Time-Series Forecasting](https://arxiv.org/abs/2012.07436). Special thanks to `Jieqi Peng`@[cookieminions](https://github.com/cookieminions) for building this repo.
 
 <p align="center">
 <img src=".\img\informer.png" height = "360" alt="" align=center />
