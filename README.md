@@ -73,7 +73,7 @@ More parameter information please refer to `main_informer.py`.
 
 ## Citation
 
-If you find this repository useful in your research, please cite the following paper:
+If you find this repository useful in your research, please consider citing the following paper:
 
 ```
 @inproceedings{haoyietal-informer-2021,
