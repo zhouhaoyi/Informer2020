@@ -13,7 +13,7 @@ This is the origin Pytorch implementation of Informer in the following paper:
 <b>Figure 1.</b> The architecture of Informer.
 </p>
 
-## Requeirements
+## Requirements
 
 - Python 3.6
 - matplotlib == 3.1.1
