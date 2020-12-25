@@ -17,10 +17,10 @@ This is the origin Pytorch implementation of Informer in the following paper:
 
 - Python 3.6
 - matplotlib == 3.1.1
-- numpy == 1.17.3
+- numpy == 1.19.4
 - pandas == 0.25.1
 - scikit_learn == 0.21.3
-- torch == 1.2.0
+- torch == 1.4.0
 
 Dependencies can be installed using the following command:
 ```bash
