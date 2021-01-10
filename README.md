@@ -100,4 +100,4 @@ If you find this repository useful in your research, please consider citing the 
 ```
 
 ## Contact
-If you have any questions, feel free to contact Haoyi Zhou through Email (zhouhy at act.buaa.edu.cn) or Github issues. Pull requests are highly welcomed!
+If you have any questions, feel free to contact Haoyi Zhou through Email (zhouhy@act.buaa.edu.cn) or Github issues. Pull requests are highly welcomed!
