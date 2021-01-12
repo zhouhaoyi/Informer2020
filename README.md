@@ -44,7 +44,7 @@ The required data files should be put into `data/ETT/` folder. A demo slice of t
 <p align="center">
 <img src="./img/data.png" height = "168" alt="" align=center />
 <br><br>
-<b>Figure 3.</b> A demo of the ETT data.
+<b>Figure 3.</b> An example of the ETT data.
 </p>
 
 
