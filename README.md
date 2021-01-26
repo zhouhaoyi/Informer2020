@@ -79,6 +79,11 @@ More parameter information please refer to `main_informer.py`.
 <b>Figure 5.</b> Multivariate forecasting results.
 </p>
 
+
+## Note
+If you run into a problem like `RuntimeError: The size of tensor a (98) must match the size of tensor b (96) at non-singleton dimension 1`, you can check torch version or modify code about `Conv1d` of `TokenEmbedding` in `models/embed.py` as the way of padding in Conv1d changed in different torch version.
+
+
 ## Citation
 If you find this repository useful in your research, please consider citing the following paper:
 
