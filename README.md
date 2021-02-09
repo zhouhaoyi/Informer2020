@@ -1,11 +1,31 @@
-# Informer: Beyond Efficient Transformer for Long Sequence Time-Series Forecasting
+# Informer: Beyond Efficient Transformer for Long Sequence Time-Series Forecasting (AAAI'21 Best Paper)
 ![Python 3.6](https://img.shields.io/badge/python-3.6-green.svg?style=plastic)
 ![PyTorch 1.2](https://img.shields.io/badge/PyTorch%20-%23EE4C2C.svg?style=plastic)
 ![cuDNN 7.3.1](https://img.shields.io/badge/cudnn-7.3.1-green.svg?style=plastic)
 ![License CC BY-NC-SA](https://img.shields.io/badge/license-CC_BY--NC--SA--green.svg?style=plastic)
 
 This is the origin Pytorch implementation of Informer in the following paper: 
-[Informer: Beyond Efficient Transformer for Long Sequence Time-Series Forecasting](https://arxiv.org/abs/2012.07436). Special thanks to `Jieqi Peng`@[cookieminions](https://github.com/cookieminions) for building this repo.
+[Informer: Beyond Efficient Transformer for Long Sequence Time-Series Forecasting](https://arxiv.org/abs/2012.07436) (AAAI'21 Best Paper). Special thanks to `Jieqi Peng`@[cookieminions](https://github.com/cookieminions) for building this repo.
+
+**News**: Our Informer paper has been awarded [AAAI'21 Best Paper](https://www.business.rutgers.edu/news/hui-xiong-and-research-colleagues-receive-aaai-best-paper-award)! Thanks for all your attention! We will continue this line of research and update on this repo. Please star this repo and cite our paper if you find our work is helpful for you:
+
+```
+@inproceedings{haoyietal-informer-2021,
+  author    = {Haoyi Zhou and
+               Shanghang Zhang and
+               Jieqi Peng and
+               Shuai Zhang and
+               Jianxin Li and
+               Hui Xiong and
+               Wancai Zhang},
+  title     = {Informer: Beyond Efficient Transformer for Long Sequence Time-Series Forecasting},
+  booktitle = {The Thirty-Fifth {AAAI} Conference on Artificial Intelligence, {AAAI} 2021},
+  pages     = {online},
+  publisher = {{AAAI} Press},
+  year      = {2021},
+}
+```
+
 
 <p align="center">
 <img src=".\img\informer.png" height = "360" alt="" align=center />
