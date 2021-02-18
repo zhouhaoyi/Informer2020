@@ -60,6 +60,7 @@ class Exp_Informer(Exp_Basic):
             'ETTm1':Dataset_ETT_minute,
         }
         Data = data_dict[self.args.data]
+        timeenc = 0 if args.embed!='timeF' else 1
 
         if flag == 'test':
             shuffle_flag = False; drop_last = True; batch_size = args.batch_size
@@ -71,7 +72,8 @@ class Exp_Informer(Exp_Basic):
             data_path=args.data_path,
             flag=flag,
             size=[args.seq_len, args.label_len, args.pred_len],
-            features=args.features
+            features=args.features,
+            timeenc=timeenc
         )
         print(flag, len(data_set))
         data_loader = DataLoader(

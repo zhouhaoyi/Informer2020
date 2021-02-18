@@ -28,7 +28,7 @@ parser.add_argument('--factor', type=int, default=5, help='prob sparse factor')
 
 parser.add_argument('--dropout', type=float, default=0.05, help='dropout')
 parser.add_argument('--attn', type=str, default='prob', help='attention [prob, full]')
-parser.add_argument('--embed', type=str, default='fixed', help='embedding type [fixed, learned]')
+parser.add_argument('--embed', type=str, default='timeF', help='embedding type [fixed, learned, timeF]')
 parser.add_argument('--activation', type=str, default='gelu',help='activation')
 parser.add_argument('--num_workers', type=int, default=0, help='data loader num workers')
 

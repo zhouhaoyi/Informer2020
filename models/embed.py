@@ -82,13 +82,23 @@ class TemporalEmbedding(nn.Module):
         
         return hour_x + weekday_x + day_x + month_x + minute_x
 
+class TimeFeatureEmbedding(nn.Module):
+    def __init__(self, d_model, embed_type='timeF', data='ETTh'):
+        super(TimeFeatureEmbedding, self).__init__()
+
+        d_inp = 4 if data=='ETTh' else 5
+        self.embed = nn.Linear(d_inp, d_model)
+    
+    def forward(self, x):
+        return self.embed(x)
+
 class DataEmbedding(nn.Module):
     def __init__(self, c_in, d_model, embed_type='fixed', data='ETTh', dropout=0.1):
         super(DataEmbedding, self).__init__()
 
         self.value_embedding = TokenEmbedding(c_in=c_in, d_model=d_model)
         self.position_embedding = PositionalEmbedding(d_model=d_model)
-        self.temporal_embedding = TemporalEmbedding(d_model=d_model, embed_type=embed_type, data=data)
+        self.temporal_embedding = TemporalEmbedding(d_model=d_model, embed_type=embed_type, data=data) if embed_type!='timeF' else TimeFeatureEmbedding(d_model=d_model, embed_type=embed_type, data=data)
 
         self.dropout = nn.Dropout(p=dropout)
 
