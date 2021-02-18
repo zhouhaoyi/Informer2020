@@ -69,7 +69,7 @@ class ProbAttention(nn.Module):
             contex = V_sum.unsqueeze(-2).expand(B, H, L_Q, V_sum.shape[-1]).clone()
         else: # use mask
             assert(L_Q == L_V) # requires that L_Q == L_V, i.e. for self-attention only
-            contex = V.cumsum(dim=-1)
+            contex = V.cumsum(dim=-2)
         return contex
 
     def _update_context(self, context_in, V, scores, index, L_Q, attn_mask):

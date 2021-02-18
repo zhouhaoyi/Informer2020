@@ -5,7 +5,7 @@ from exp.exp_informer import Exp_Informer
 
 parser = argparse.ArgumentParser(description='[Informer] Long Sequences Forecasting')
 
-parser.add_argument('--model', type=str, required=True, default='informer',help='model of the experiment')
+parser.add_argument('--model', type=str, required=True, default='informer',help='model of the experiment [informer, informerstack]')
 
 parser.add_argument('--data', type=str, required=True, default='ETTh1', help='data')
 parser.add_argument('--root_path', type=str, default='./data/ETT/', help='root path of the data file')

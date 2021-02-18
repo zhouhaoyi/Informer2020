@@ -69,3 +69,19 @@ class Encoder(nn.Module):
             x = self.norm(x)
 
         return x
+
+class EncoderStack(nn.Module):
+    def __init__(self, encoders):
+        super(EncoderStack, self).__init__()
+        self.encoders = nn.ModuleList(encoders)
+
+    def forward(self, x, attn_mask=None):
+        # x [B, L, D]
+        inp_len = x.shape[1]
+        x_stack = []
+        for encoder in self.encoders:
+            x_stack.append(encoder(x[:, -inp_len:, :]))
+            inp_len = inp_len//2
+        x_stack = torch.cat(x_stack, -2)
+        
+        return x_stack
