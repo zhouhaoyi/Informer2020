@@ -8,10 +8,11 @@ from math import sqrt
 from utils.masking import TriangularCausalMask, ProbMask
 
 class FullAttention(nn.Module):
-    def __init__(self, mask_flag=True, factor=5, scale=None, attention_dropout=0.1):
+    def __init__(self, mask_flag=True, factor=5, scale=None, attention_dropout=0.1, output_attention=False):
         super(FullAttention, self).__init__()
         self.scale = scale
         self.mask_flag = mask_flag
+        self.output_attention = output_attention
         self.dropout = nn.Dropout(attention_dropout)
         
     def forward(self, queries, keys, values, attn_mask):
@@ -28,15 +29,19 @@ class FullAttention(nn.Module):
 
         A = self.dropout(torch.softmax(scale * scores, dim=-1))
         V = torch.einsum("bhls,bshd->blhd", A, values)
-
-        return V.contiguous()
+        
+        if self.output_attention:
+            return (V.contiguous(), A)
+        else:
+            return (V.contiguous(), None)
 
 class ProbAttention(nn.Module):
-    def __init__(self, mask_flag=True, factor=5, scale=None, attention_dropout=0.1):
+    def __init__(self, mask_flag=True, factor=5, scale=None, attention_dropout=0.1, output_attention=False):
         super(ProbAttention, self).__init__()
         self.factor = factor
         self.scale = scale
         self.mask_flag = mask_flag
+        self.output_attention = output_attention
         self.dropout = nn.Dropout(attention_dropout)
 
     def _prob_QK(self, Q, K, sample_k, n_top):
@@ -65,7 +70,8 @@ class ProbAttention(nn.Module):
     def _get_initial_context(self, V, L_Q):
         B, H, L_V, D = V.shape
         if not self.mask_flag:
-            V_sum = V.sum(dim=-2)
+            # V_sum = V.sum(dim=-2)
+            V_sum = V.mean(dim=-2)
             contex = V_sum.unsqueeze(-2).expand(B, H, L_Q, V_sum.shape[-1]).clone()
         else: # use mask
             assert(L_Q == L_V) # requires that L_Q == L_V, i.e. for self-attention only
@@ -84,7 +90,12 @@ class ProbAttention(nn.Module):
         context_in[torch.arange(B)[:, None, None],
                    torch.arange(H)[None, :, None],
                    index, :] = torch.matmul(attn, V)
-        return context_in
+        if self.output_attention:
+            attns = (torch.ones([B, H, L_V, L_V])/L_V).double().to(attn.device)
+            attns[torch.arange(B)[:, None, None], torch.arange(H)[None, :, None], index, :] = attn
+            return (context_in, attns)
+        else:
+            return (context_in, None)
 
     def forward(self, queries, keys, values, attn_mask):
         B, L, H, D = queries.shape
@@ -105,9 +116,9 @@ class ProbAttention(nn.Module):
         # get the context
         context = self._get_initial_context(values, L)
         # update the context with selected top_k queries
-        context = self._update_context(context, values, scores_top, index, L, attn_mask)
+        context, attn = self._update_context(context, values, scores_top, index, L, attn_mask)
         
-        return context.contiguous()
+        return context.contiguous(), attn
 
 
 class AttentionLayer(nn.Module):
@@ -134,11 +145,12 @@ class AttentionLayer(nn.Module):
         keys = self.key_projection(keys).view(B, S, H, -1)
         values = self.value_projection(values).view(B, S, H, -1)
 
-        out = self.inner_attention(
+        out, attn = self.inner_attention(
             queries,
             keys,
             values,
             attn_mask
-        ).view(B, L, -1)
+        )
+        out = out.view(B, L, -1)
 
-        return self.out_projection(out)
+        return self.out_projection(out), attn

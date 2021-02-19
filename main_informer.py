@@ -25,11 +25,13 @@ parser.add_argument('--e_layers', type=int, default=3, help='num of encoder laye
 parser.add_argument('--d_layers', type=int, default=2, help='num of decoder layers')
 parser.add_argument('--d_ff', type=int, default=1024, help='dimension of fcn')
 parser.add_argument('--factor', type=int, default=5, help='prob sparse factor')
+parser.add_argument('--distil', action='store_false', help='use distilling', default=True)
 
 parser.add_argument('--dropout', type=float, default=0.05, help='dropout')
 parser.add_argument('--attn', type=str, default='prob', help='attention [prob, full]')
 parser.add_argument('--embed', type=str, default='timeF', help='embedding type [fixed, learned, timeF]')
 parser.add_argument('--activation', type=str, default='gelu',help='activation')
+parser.add_argument('--output_attention', action='store_true', help='control attention output')
 parser.add_argument('--num_workers', type=int, default=0, help='data loader num workers')
 
 parser.add_argument('--itr', type=int, default=2, help='each params run iteration')
@@ -57,12 +59,15 @@ if args.data in data_parser.keys():
     args.target = data_info['T']
     args.enc_in, args.dec_in, args.c_out = data_info[args.features]
 
+print('Args in experiment:')
+print(args)
+
 Exp = Exp_Informer
 
 for ii in range(args.itr):
-    setting = '{}_{}_ft{}_sl{}_ll{}_pl{}_dm{}_nh{}_el{}_dl{}_df{}_at{}_eb{}_{}_{}'.format(args.model, args.data, args.features, 
+    setting = '{}_{}_ft{}_sl{}_ll{}_pl{}_dm{}_nh{}_el{}_dl{}_df{}_at{}_eb{}_dt{}_{}_{}'.format(args.model, args.data, args.features, 
                 args.seq_len, args.label_len, args.pred_len,
-                args.d_model, args.n_heads, args.e_layers, args.d_layers, args.d_ff, args.attn, args.embed, args.des, ii)
+                args.d_model, args.n_heads, args.e_layers, args.d_layers, args.d_ff, args.attn, args.embed, args.distil, args.des, ii)
 
     exp = Exp(args)
     print('>>>>>>>start training : {}>>>>>>>>>>>>>>>>>>>>>>>>>>'.format(setting))

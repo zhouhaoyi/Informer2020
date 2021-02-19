@@ -98,4 +98,4 @@ def time_features_from_frequency_str(freq_str: str) -> List[TimeFeature]:
     raise RuntimeError(supported_freq_msg)
 
 def time_features(dates, freq='h'):
-    return np.vstack([feat(dates) for feat in time_features_from_frequency_str('h')])
+    return np.vstack([feat(dates) for feat in time_features_from_frequency_str(freq)])
