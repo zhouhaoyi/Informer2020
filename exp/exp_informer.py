@@ -46,6 +46,8 @@ class Exp_Informer(Exp_Basic):
                 self.args.embed,
                 self.args.data[:-1],
                 self.args.activation,
+                self.args.output_attention,
+                self.args.distil,
                 self.device
             )
         
@@ -107,7 +109,10 @@ class Exp_Informer(Exp_Basic):
             dec_inp = torch.zeros_like(batch_y[:,-self.args.pred_len:,:]).double()
             dec_inp = torch.cat([batch_y[:,:self.args.label_len,:], dec_inp], dim=1).double().to(self.device)
             # encoder - decoder
-            outputs = self.model(batch_x, batch_x_mark, dec_inp, batch_y_mark)
+            if self.args.output_attention:
+                outputs = self.model(batch_x, batch_x_mark, dec_inp, batch_y_mark)[0]
+            else:
+                outputs = self.model(batch_x, batch_x_mark, dec_inp, batch_y_mark)
             batch_y = batch_y[:,-self.args.pred_len:,:].to(self.device)
 
             pred = outputs.detach().cpu()
@@ -157,7 +162,10 @@ class Exp_Informer(Exp_Basic):
                 dec_inp = torch.zeros_like(batch_y[:,-self.args.pred_len:,:]).double()
                 dec_inp = torch.cat([batch_y[:,:self.args.label_len,:], dec_inp], dim=1).double().to(self.device)
                 # encoder - decoder
-                outputs = self.model(batch_x, batch_x_mark, dec_inp, batch_y_mark)
+                if self.args.output_attention:
+                    outputs = self.model(batch_x, batch_x_mark, dec_inp, batch_y_mark)[0]
+                else:
+                    outputs = self.model(batch_x, batch_x_mark, dec_inp, batch_y_mark)
 
                 batch_y = batch_y[:,-self.args.pred_len:,:].to(self.device)
                 loss = criterion(outputs, batch_y)
@@ -210,7 +218,10 @@ class Exp_Informer(Exp_Basic):
             dec_inp = torch.zeros_like(batch_y[:,-self.args.pred_len:,:]).double()
             dec_inp = torch.cat([batch_y[:,:self.args.label_len,:], dec_inp], dim=1).double().to(self.device)
             # encoder - decoder
-            outputs = self.model(batch_x, batch_x_mark, dec_inp, batch_y_mark)
+            if self.args.output_attention:
+                outputs = self.model(batch_x, batch_x_mark, dec_inp, batch_y_mark)[0]
+            else:
+                outputs = self.model(batch_x, batch_x_mark, dec_inp, batch_y_mark)
             batch_y = batch_y[:,-self.args.pred_len:,:].to(self.device)
             
             pred = outputs.detach().cpu().numpy()#.squeeze()

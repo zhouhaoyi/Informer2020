@@ -36,16 +36,21 @@ class EncoderLayer(nn.Module):
 
     def forward(self, x, attn_mask=None):
         # x [B, L, D]
-        x = x + self.dropout(self.attention(
+        # x = x + self.dropout(self.attention(
+        #     x, x, x,
+        #     attn_mask = attn_mask
+        # ))
+        new_x, attn = self.attention(
             x, x, x,
             attn_mask = attn_mask
-        ))
+        )
+        x = x + self.dropout(new_x)
 
         y = x = self.norm1(x)
         y = self.dropout(self.activation(self.conv1(y.transpose(-1,1))))
         y = self.dropout(self.conv2(y).transpose(-1,1))
 
-        return self.norm2(x+y)
+        return self.norm2(x+y), attn
 
 class Encoder(nn.Module):
     def __init__(self, attn_layers, conv_layers=None, norm_layer=None):
@@ -56,19 +61,23 @@ class Encoder(nn.Module):
 
     def forward(self, x, attn_mask=None):
         # x [B, L, D]
+        attns = []
         if self.conv_layers is not None:
             for attn_layer, conv_layer in zip(self.attn_layers, self.conv_layers):
-                x = attn_layer(x, attn_mask=attn_mask)
+                x, attn = attn_layer(x, attn_mask=attn_mask)
                 x = conv_layer(x)
-            x = self.attn_layers[-1](x)
+                attns.append(attn)
+            x, attn = self.attn_layers[-1](x)
+            attns.append(attn)
         else:
             for attn_layer in self.attn_layers:
-                x = attn_layer(x, attn_mask=attn_mask)
+                x, attn = attn_layer(x, attn_mask=attn_mask)
+                attns.append(attn)
 
         if self.norm is not None:
             x = self.norm(x)
 
-        return x
+        return x, attns
 
 class EncoderStack(nn.Module):
     def __init__(self, encoders):
@@ -79,9 +88,11 @@ class EncoderStack(nn.Module):
         # x [B, L, D]
         inp_len = x.shape[1]
         x_stack = []
+        attns = []
         for encoder in self.encoders:
-            x_stack.append(encoder(x[:, -inp_len:, :]))
+            x, attn = encoder(x[:, -inp_len:, :])
+            x_stack.append(x); attns.append(attn)
             inp_len = inp_len//2
         x_stack = torch.cat(x_stack, -2)
         
-        return x_stack
+        return x_stack, attns
