@@ -1,4 +1,4 @@
-from data.data_loader import Dataset_ETT_hour, Dataset_ETT_minute
+from data.data_loader import Dataset_ETT_hour, Dataset_ETT_minute, Dataset_Custom
 from exp.exp_basic import Exp_Basic
 from models.model import Informer, InformerStack
 
@@ -60,6 +60,8 @@ class Exp_Informer(Exp_Basic):
             'ETTh1':Dataset_ETT_hour,
             'ETTh2':Dataset_ETT_hour,
             'ETTm1':Dataset_ETT_minute,
+            'ETTm2':Dataset_ETT_minute,
+            'custom':Dataset_Custom,
         }
         Data = data_dict[self.args.data]
         timeenc = 0 if args.embed!='timeF' else 1
@@ -75,7 +77,8 @@ class Exp_Informer(Exp_Basic):
             flag=flag,
             size=[args.seq_len, args.label_len, args.pred_len],
             features=args.features,
-            timeenc=timeenc
+            timeenc=timeenc,
+            freq=args.freq
         )
         print(flag, len(data_set))
         data_loader = DataLoader(
