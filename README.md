@@ -7,6 +7,8 @@
 This is the origin Pytorch implementation of Informer in the following paper: 
 [Informer: Beyond Efficient Transformer for Long Sequence Time-Series Forecasting](https://arxiv.org/abs/2012.07436). Special thanks to `Jieqi Peng`@[cookieminions](https://github.com/cookieminions) for building this repo.
 
+**News**: We provide a colab link for friendly usage.
+
 **News**: Our Informer paper has been awarded [AAAI'21 Best Paper](https://www.business.rutgers.edu/news/hui-xiong-and-research-colleagues-receive-aaai-best-paper-award)! Thanks for all your attention! We will continue this line of research and update on this repo. Please star this repo and cite our paper if you find our work is helpful for you:
 
 ```
@@ -69,8 +71,7 @@ The required data files should be put into `data/ETT/` folder. A demo slice of t
 
 
 ## Usage
-We offer a colab to help people use our repo, the colab includes `experiments:train and test`, `prediction`, `visualization` and `custom data`.
-
+We provide a google colab to help reproducing and customing our repo, which includes `experiments:train and test`, `prediction`, `visualization` and `custom data`.
 [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/drive/1_X7O2BkFLvqyCdZzDZvV2MB0aAvYALLC)
 
 Commands for training and testing the model with *ProbSparse* self-attention on Dataset ETTh1, ETTh2 and ETTm1 respectively:
