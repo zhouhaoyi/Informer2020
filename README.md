@@ -9,7 +9,7 @@ This is the origin Pytorch implementation of Informer in the following paper:
 
 :triangular_flag_on_post:**News**: We provide [Colab Examples](#colablink) for friendly usage.
 
-:triangular_flag_on_post:**News**: Our Informer paper has been awarded [AAAI'21 Best Paper](https://www.business.rutgers.edu/news/hui-xiong-and-research-colleagues-receive-aaai-best-paper-award)! We will continue this line of research and update on this repo. Please star this repo and cite our paper if you find our work is helpful for you:
+:triangular_flag_on_post:**News**: Our Informer paper has been awarded [AAAI'21 Best Paper](https://www.business.rutgers.edu/news/hui-xiong-and-research-colleagues-receive-aaai-best-paper-award)! We will continue this line of research and update on this repo. Please star this repo and cite our paper if you find our work is helpful for you.
 
 <p align="center">
 <img src=".\img\informer.png" height = "360" alt="" align=center />
