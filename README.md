@@ -7,9 +7,9 @@
 This is the origin Pytorch implementation of Informer in the following paper: 
 [Informer: Beyond Efficient Transformer for Long Sequence Time-Series Forecasting](https://arxiv.org/abs/2012.07436). Special thanks to `Jieqi Peng`@[cookieminions](https://github.com/cookieminions) for building this repo.
 
-**News**: We provide [Colab Examples](#colablink) for friendly usage.
+:triangular_flag_on_post:**News**: We provide [Colab Examples](#colablink) for friendly usage.
 
-**News**: Our Informer paper has been awarded [AAAI'21 Best Paper](https://www.business.rutgers.edu/news/hui-xiong-and-research-colleagues-receive-aaai-best-paper-award)! Thanks for all your attention! We will continue this line of research and update on this repo. Please star this repo and cite our paper if you find our work is helpful for you:
+:triangular_flag_on_post:**News**: Our Informer paper has been awarded [AAAI'21 Best Paper](https://www.business.rutgers.edu/news/hui-xiong-and-research-colleagues-receive-aaai-best-paper-award)! Thanks for all your attention! We will continue this line of research and update on this repo. Please star this repo and cite our paper if you find our work is helpful for you:
 
 ```
 @inproceedings{haoyietal-informer-2021,
