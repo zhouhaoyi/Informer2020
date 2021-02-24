@@ -77,6 +77,7 @@ class Exp_Informer(Exp_Basic):
             flag=flag,
             size=[args.seq_len, args.label_len, args.pred_len],
             features=args.features,
+            target=args.target,
             timeenc=timeenc,
             freq=args.freq
         )
@@ -116,7 +117,8 @@ class Exp_Informer(Exp_Basic):
                 outputs = self.model(batch_x, batch_x_mark, dec_inp, batch_y_mark)[0]
             else:
                 outputs = self.model(batch_x, batch_x_mark, dec_inp, batch_y_mark)
-            batch_y = batch_y[:,-self.args.pred_len:,:].to(self.device)
+            f_dim = -1 if self.args.features=='MS' else 0
+            batch_y = batch_y[:,-self.args.pred_len:,f_dim:].to(self.device)
 
             pred = outputs.detach().cpu()
             true = batch_y.detach().cpu()
@@ -170,7 +172,8 @@ class Exp_Informer(Exp_Basic):
                 else:
                     outputs = self.model(batch_x, batch_x_mark, dec_inp, batch_y_mark)
 
-                batch_y = batch_y[:,-self.args.pred_len:,:].to(self.device)
+                f_dim = -1 if self.args.features=='MS' else 0
+                batch_y = batch_y[:,-self.args.pred_len:,f_dim:].to(self.device)
                 loss = criterion(outputs, batch_y)
                 train_loss.append(loss.item())
                 
@@ -225,7 +228,8 @@ class Exp_Informer(Exp_Basic):
                 outputs = self.model(batch_x, batch_x_mark, dec_inp, batch_y_mark)[0]
             else:
                 outputs = self.model(batch_x, batch_x_mark, dec_inp, batch_y_mark)
-            batch_y = batch_y[:,-self.args.pred_len:,:].to(self.device)
+            f_dim = -1 if self.args.features=='MS' else 0
+            batch_y = batch_y[:,-self.args.pred_len:,f_dim:].to(self.device)
             
             pred = outputs.detach().cpu().numpy()#.squeeze()
             true = batch_y.detach().cpu().numpy()#.squeeze()
