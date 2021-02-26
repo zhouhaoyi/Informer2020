@@ -90,6 +90,9 @@ class EncoderStack(nn.Module):
         x_stack = []
         attns = []
         for encoder in self.encoders:
+            if encoder is None:
+                inp_len = inp_len//2
+                continue
             x, attn = encoder(x[:, -inp_len:, :])
             x_stack.append(x); attns.append(attn)
             inp_len = inp_len//2
