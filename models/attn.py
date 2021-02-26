@@ -44,26 +44,26 @@ class ProbAttention(nn.Module):
         self.output_attention = output_attention
         self.dropout = nn.Dropout(attention_dropout)
 
-    def _prob_QK(self, Q, K, sample_k, n_top):
+    def _prob_QK(self, Q, K, sample_k, n_top): # n_top: c*ln(L_q)
         # Q [B, H, L, D]
-        B, H, L, E = K.shape
-        _, _, S, _ = Q.shape
+        B, H, L_K, E = K.shape
+        _, _, L_Q, _ = Q.shape
 
         # calculate the sampled Q_K
-        K_expand = K.unsqueeze(-3).expand(B, H, S, L, E)
-        indx_sample = torch.randint(L, (S, sample_k))
-        K_sample = K_expand[:, :, torch.arange(S).unsqueeze(1), indx_sample, :]
+        K_expand = K.unsqueeze(-3).expand(B, H, L_Q, L_K, E)
+        index_sample = torch.randint(L_K, (L_Q, sample_k)) # real U = U_part(factor*ln(L_k))*L_q
+        K_sample = K_expand[:, :, torch.arange(L_Q).unsqueeze(1), index_sample, :]
         Q_K_sample = torch.matmul(Q.unsqueeze(-2), K_sample.transpose(-2, -1)).squeeze()
 
         # find the Top_k query with sparisty measurement
-        M = Q_K_sample.max(-1)[0] - torch.div(Q_K_sample.sum(-1), L)
+        M = Q_K_sample.max(-1)[0] - torch.div(Q_K_sample.sum(-1), L_K)
         M_top = M.topk(n_top, sorted=False)[1]
 
         # use the reduced Q to calculate Q_K
         Q_reduce = Q[torch.arange(B)[:, None, None],
                      torch.arange(H)[None, :, None],
-                     M_top, :]
-        Q_K = torch.matmul(Q_reduce, K.transpose(-2, -1))
+                     M_top, :] # factor*ln(L_q)
+        Q_K = torch.matmul(Q_reduce, K.transpose(-2, -1)) # factor*ln(L_q)*L_k
 
         return Q_K, M_top
 
@@ -98,25 +98,26 @@ class ProbAttention(nn.Module):
             return (context_in, None)
 
     def forward(self, queries, keys, values, attn_mask):
-        B, L, H, D = queries.shape
-        _, S, _, _ = keys.shape
+        B, L_Q, H, D = queries.shape
+        _, L_K, _, _ = keys.shape
 
-        queries = queries.view(B, H, L, -1)
-        keys = keys.view(B, H, S, -1)
-        values = values.view(B, H, S, -1)
+        queries = queries.view(B, H, L_Q, -1)
+        keys = keys.view(B, H, L_K, -1)
+        values = values.view(B, H, L_K, -1)
 
-        U = self.factor * np.ceil(np.log(S)).astype('int').item()
-        u = self.factor * np.ceil(np.log(L)).astype('int').item()
+        U_part = self.factor * np.ceil(np.log(L_K)).astype('int').item() # c*ln(L_k)
+        u = self.factor * np.ceil(np.log(L_Q)).astype('int').item() # c*ln(L_q) 
         
-        scores_top, index = self._prob_QK(queries, keys, u, U)
+        scores_top, index = self._prob_QK(queries, keys, sample_k=U_part, n_top=u) 
+
         # add scale factor
         scale = self.scale or 1./sqrt(D)
         if scale is not None:
             scores_top = scores_top * scale
         # get the context
-        context = self._get_initial_context(values, L)
+        context = self._get_initial_context(values, L_Q)
         # update the context with selected top_k queries
-        context, attn = self._update_context(context, values, scores_top, index, L, attn_mask)
+        context, attn = self._update_context(context, values, scores_top, index, L_Q, attn_mask)
         
         return context.contiguous(), attn
 
