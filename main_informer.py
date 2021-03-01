@@ -13,7 +13,7 @@ parser.add_argument('--root_path', type=str, default='./data/ETT/', help='root p
 parser.add_argument('--data_path', type=str, default='ETTh1.csv', help='data file')    
 parser.add_argument('--features', type=str, default='M', help='forecasting task, options:[M, S, MS(TBD)]; M:multivariate predict multivariate, S:univariate predict univariate, MS:multivariate predict univariate')
 parser.add_argument('--target', type=str, default='OT', help='target feature in S or MS task')
-parser.add_argument('--freq', type=str, default='h', help='freq for time features encoding')
+parser.add_argument('--freq', type=str, default='h', help='freq for time features encoding, options:[t:minutely, h:hourly, d:daily, b:business days, w:weekly, m:monthly]')
 
 parser.add_argument('--seq_len', type=int, default=96, help='input sequence length of Informer encoder')
 parser.add_argument('--label_len', type=int, default=48, help='start token length of Informer decoder')
@@ -72,9 +72,9 @@ Exp = Exp_Informer
 
 for ii in range(args.itr):
     # setting record of experiments
-    setting = '{}_{}_ft{}_sl{}_ll{}_pl{}_dm{}_nh{}_el{}_dl{}_df{}_at{}_eb{}_dt{}_{}_{}'.format(args.model, args.data, args.features, 
+    setting = '{}_{}_ft{}_sl{}_ll{}_pl{}_dm{}_nh{}_el{}_dl{}_df{}_at{}_fc{}_eb{}_dt{}_{}_{}'.format(args.model, args.data, args.features, 
                 args.seq_len, args.label_len, args.pred_len,
-                args.d_model, args.n_heads, args.e_layers, args.d_layers, args.d_ff, args.attn, args.embed, args.distil, args.des, ii)
+                args.d_model, args.n_heads, args.e_layers, args.d_layers, args.d_ff, args.attn, args.factor, args.embed, args.distil, args.des, ii)
 
     exp = Exp(args) # set experiments
     print('>>>>>>>start training : {}>>>>>>>>>>>>>>>>>>>>>>>>>>'.format(setting))
