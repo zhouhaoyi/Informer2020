@@ -113,3 +113,8 @@ If you find this repository useful in your research, please consider citing the 
 
 ## Contact
 If you have any questions, feel free to contact Haoyi Zhou through Email (zhouhy@act.buaa.edu.cn) or Github issues. Pull requests are highly welcomed!
+
+## Acknowlegements
+Thanks for computing infrastructure provided by Beijing Advanced Innovation Center for Big Data and Brain Computing.
+At the same time, thank you all for your attention to this work!
+[![Stargazers repo roster for @zhouhaoyi/Informer2020](https://reporoster.com/stars/zhouhaoyi/Informer2020)](https://github.com/zhouhaoyi/Informer2020/stargazers)
