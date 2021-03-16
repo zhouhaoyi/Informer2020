@@ -9,7 +9,7 @@ This is the origin Pytorch implementation of Informer in the following paper:
 
 :triangular_flag_on_post:**News**(Feb 22, 2021): We provide [Colab Examples](#colablink) for friendly usage.
 
-:triangular_flag_on_post:**News**(Feb 8, 2021): Our Informer paper has been awarded [AAAI'21 Best Paper](https://www.business.rutgers.edu/news/hui-xiong-and-research-colleagues-receive-aaai-best-paper-award)! We will continue this line of research and update on this repo. Please star this repo and cite our paper if you find our work is helpful for you.
+:triangular_flag_on_post:**News**(Feb 8, 2021): Our Informer paper has been awarded [AAAI'21 Best Paper](https://www.business.rutgers.edu/news/hui-xiong-and-research-colleagues-receive-aaai-best-paper-award)! We will continue this line of research and update on this repo. Please star this repo and [cite](#citelink) our paper if you find our work is helpful for you.
 
 <p align="center">
 <img src=".\img\informer.png" height = "360" alt="" align=center />
@@ -91,7 +91,7 @@ More parameter information please refer to `main_informer.py`.
 If you run into a problem like `RuntimeError: The size of tensor a (98) must match the size of tensor b (96) at non-singleton dimension 1`, you can check torch version or modify code about `Conv1d` of `TokenEmbedding` in `models/embed.py` as the way of circular padding mode in Conv1d changed in different torch versions.
 
 
-## Citation
+## <span id="citelink">Citation</span>
 If you find this repository useful in your research, please consider citing the following paper:
 
 ```
