@@ -101,9 +101,9 @@ class ProbAttention(nn.Module):
         B, L_Q, H, D = queries.shape
         _, L_K, _, _ = keys.shape
 
-        queries = queries.view(B, H, L_Q, -1)
-        keys = keys.view(B, H, L_K, -1)
-        values = values.view(B, H, L_K, -1)
+        queries = queries.transpose(2,1)
+        keys = keys.transpose(2,1)
+        values = values.transpose(2,1)
 
         U_part = self.factor * np.ceil(np.log(L_K)).astype('int').item() # c*ln(L_k)
         u = self.factor * np.ceil(np.log(L_Q)).astype('int').item() # c*ln(L_q) 
