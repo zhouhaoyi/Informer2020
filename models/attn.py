@@ -89,9 +89,9 @@ class ProbAttention(nn.Module):
 
         context_in[torch.arange(B)[:, None, None],
                    torch.arange(H)[None, :, None],
-                   index, :] = torch.matmul(attn, V)
+                   index, :] = torch.matmul(attn, V).type_as(context_in)
         if self.output_attention:
-            attns = (torch.ones([B, H, L_V, L_V])/L_V).double().to(attn.device)
+            attns = (torch.ones([B, H, L_V, L_V])/L_V).type_as(attn).to(attn.device)
             attns[torch.arange(B)[:, None, None], torch.arange(H)[None, :, None], index, :] = attn
             return (context_in, attns)
         else:
@@ -107,6 +107,9 @@ class ProbAttention(nn.Module):
 
         U_part = self.factor * np.ceil(np.log(L_K)).astype('int').item() # c*ln(L_k)
         u = self.factor * np.ceil(np.log(L_Q)).astype('int').item() # c*ln(L_q) 
+
+        U_part = U_part if U_part<L_K else L_K
+        u = u if u<L_Q else L_Q
         
         scores_top, index = self._prob_QK(queries, keys, sample_k=U_part, n_top=u) 
 

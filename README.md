@@ -33,7 +33,7 @@ The self-attention scores form a long-tail distribution, where the "active" quer
 - numpy == 1.19.4
 - pandas == 0.25.1
 - scikit_learn == 0.21.3
-- torch == 1.4.0
+- torch == 1.8.0
 
 Dependencies can be installed using the following command:
 ```bash
