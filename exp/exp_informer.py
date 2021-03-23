@@ -1,4 +1,4 @@
-from data.data_loader import Dataset_ETT_hour, Dataset_ETT_minute, Dataset_Custom
+from data.data_loader import Dataset_ETT_hour, Dataset_ETT_minute, Dataset_Custom, Dataset_Pred
 from exp.exp_basic import Exp_Basic
 from models.model import Informer, InformerStack
 
@@ -69,9 +69,12 @@ class Exp_Informer(Exp_Basic):
         timeenc = 0 if args.embed!='timeF' else 1
 
         if flag == 'test':
-            shuffle_flag = False; drop_last = True; batch_size = args.batch_size
+            shuffle_flag = False; drop_last = True; batch_size = args.batch_size; freq=args.freq
+        elif flag=='pred':
+            shuffle_flag = False; drop_last = False; batch_size = 1; freq=args.detail_freq
+            Data = Dataset_Pred
         else:
-            shuffle_flag = True; drop_last = True; batch_size = args.batch_size
+            shuffle_flag = True; drop_last = True; batch_size = args.batch_size; freq=args.freq
         
         data_set = Data(
             root_path=args.root_path,
@@ -81,7 +84,7 @@ class Exp_Informer(Exp_Basic):
             features=args.features,
             target=args.target,
             timeenc=timeenc,
-            freq=args.freq
+            freq=freq
         )
         print(flag, len(data_set))
         data_loader = DataLoader(
@@ -295,4 +298,56 @@ class Exp_Informer(Exp_Basic):
         np.save(folder_path+'pred.npy', preds)
         np.save(folder_path+'true.npy', trues)
 
+        return
+
+    def predict(self, setting, load=False):
+        pred_data, pred_loader = self._get_data(flag='pred')
+        
+        if load:
+            path = os.path.join(self.args.checkpoints, setting)
+            best_model_path = path+'/'+'checkpoint.pth'
+            self.model.load_state_dict(torch.load(best_model_path))
+
+        self.model.eval()
+        
+        preds = []
+        
+        for i, (batch_x,batch_y,batch_x_mark,batch_y_mark) in enumerate(pred_loader):
+            batch_x = batch_x.float().to(self.device)
+            batch_y = batch_y.float()
+            batch_x_mark = batch_x_mark.float().to(self.device)
+            batch_y_mark = batch_y_mark.float().to(self.device)
+
+            # decoder input
+            dec_inp = torch.zeros_like(batch_y[:,-self.args.pred_len:,:]).float()
+            dec_inp = torch.cat([batch_y[:,:self.args.label_len,:], dec_inp], dim=1).float().to(self.device)
+            # encoder - decoder
+            if self.args.use_amp:
+                with torch.cuda.amp.autocast():
+                    if self.args.output_attention:
+                        outputs = self.model(batch_x, batch_x_mark, dec_inp, batch_y_mark)[0]
+                    else:
+                        outputs = self.model(batch_x, batch_x_mark, dec_inp, batch_y_mark)
+            else:
+                if self.args.output_attention:
+                    outputs = self.model(batch_x, batch_x_mark, dec_inp, batch_y_mark)[0]
+                else:
+                    outputs = self.model(batch_x, batch_x_mark, dec_inp, batch_y_mark)
+            f_dim = -1 if self.args.features=='MS' else 0
+            batch_y = batch_y[:,-self.args.pred_len:,f_dim:].to(self.device)
+            
+            pred = outputs.detach().cpu().numpy()#.squeeze()
+            
+            preds.append(pred)
+
+        preds = np.array(preds)
+        preds = preds.reshape(-1, preds.shape[-2], preds.shape[-1])
+        
+        # result save
+        folder_path = './results/' + setting +'/'
+        if not os.path.exists(folder_path):
+            os.makedirs(folder_path)
+        
+        np.save(folder_path+'real_prediction.npy', preds)
+        
         return

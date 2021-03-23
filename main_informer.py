@@ -75,6 +75,9 @@ if args.data in data_parser.keys():
     args.target = data_info['T']
     args.enc_in, args.dec_in, args.c_out = data_info[args.features]
 
+args.detail_freq = args.freq
+args.freq = args.freq[-1:]
+
 print('Args in experiment:')
 print(args)
 
