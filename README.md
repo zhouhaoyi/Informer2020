@@ -7,6 +7,8 @@
 This is the origin Pytorch implementation of Informer in the following paper: 
 [Informer: Beyond Efficient Transformer for Long Sequence Time-Series Forecasting](https://arxiv.org/abs/2012.07436). Special thanks to `Jieqi Peng`@[cookieminions](https://github.com/cookieminions) for building this repo.
 
+:triangular_flag_on_post:**News**(Mar 25, 2021): We update all experiment [results](#resultslink) with hyperparameter settings.
+
 :triangular_flag_on_post:**News**(Feb 22, 2021): We provide [Colab Examples](#colablink) for friendly usage.
 
 :triangular_flag_on_post:**News**(Feb 8, 2021): Our Informer paper has been awarded [AAAI'21 Best Paper](https://www.business.rutgers.edu/news/hui-xiong-and-research-colleagues-receive-aaai-best-paper-award)! We will continue this line of research and update on this repo. Please star this repo and [cite](#citelink) our paper if you find our work is helpful for you.
@@ -72,13 +74,13 @@ python -u main_informer.py --model informer --data ETTm1 --attn prob --freq t
 More parameter information please refer to `main_informer.py`.
 
 
-## Results
+## <span id="resultslink">Results</span>
 
 We have updated the experiment results of all methods due to the change of data scaling.
 
 The experiment parameters of each data set are published in the `.sh` files under the directory `./scripts/`. You can refer to these parameters for experiments, and you can also adjust the parameters to obtain better mse and mae results or draw better prediction figures.
 
-Thank you @lk1983823 for reminding the data scaling in [issue 41](https://github.com/zhouhaoyi/Informer2020/issues/41). And we really appreciate everyone who followed our work and helped us improve the experiment. 
+Thank you @lk1983823 for reminding the data scaling in [issue 41](https://github.com/zhouhaoyi/Informer2020/issues/41).
 
 <p align="center">
 <img src="./img/result_univariate.png" height = "500" alt="" align=center />
