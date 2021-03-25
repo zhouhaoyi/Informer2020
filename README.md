@@ -76,11 +76,9 @@ More parameter information please refer to `main_informer.py`.
 
 ## <span id="resultslink">Results</span>
 
-We have updated the experiment results of all methods due to the change of data scaling.
+We have updated the experiment results of all methods due to the change in data scaling. We are lucky that Informer gets performance improvement. Thank you @lk1983823 for reminding the data scaling in [issue 41](https://github.com/zhouhaoyi/Informer2020/issues/41).
 
-The experiment parameters of each data set are published in the `.sh` files under the directory `./scripts/`. You can refer to these parameters for experiments, and you can also adjust the parameters to obtain better mse and mae results or draw better prediction figures.
-
-Thank you @lk1983823 for reminding the data scaling in [issue 41](https://github.com/zhouhaoyi/Informer2020/issues/41).
+Besides, the experiment parameters of each data set are formated in the `.sh` files in the directory `./scripts/`. You can refer to these parameters for experiments, and you can also adjust the parameters to obtain better mse and mae results or draw better prediction figures.
 
 <p align="center">
 <img src="./img/result_univariate.png" height = "500" alt="" align=center />
