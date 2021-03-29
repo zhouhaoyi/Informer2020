@@ -111,5 +111,20 @@ def time_features_from_frequency_str(freq_str: str) -> List[TimeFeature]:
     """
     raise RuntimeError(supported_freq_msg)
 
-def time_features(dates, freq='h'):
-    return np.vstack([feat(dates) for feat in time_features_from_frequency_str(freq)])
+def time_features(dates, timeenc=1, freq='h'):
+    if timeenc==0:
+        dates['month'] = dates.date.apply(lambda row:row.month,1)
+        dates['day'] = dates.date.apply(lambda row:row.day,1)
+        dates['weekday'] = dates.date.apply(lambda row:row.weekday(),1)
+        dates['hour'] = dates.date.apply(lambda row:row.hour,1)
+        dates['minute'] = dates.date.apply(lambda row:row.minute,1)
+        dates['minute'] = dates.minute.map(lambda x:x//15)
+        freq_map = {
+            'y':[],'m':['month'],'w':['month'],'d':['month','day','weekday'],
+            'b':['month','day','weekday'],'h':['month','day','weekday','hour'],
+            't':['month','day','weekday','hour','minute'],
+        }
+        return dates[freq_map[freq.lower()]].values
+    if timeenc==1:
+        dates = pd.to_datetime(dates.date.values)
+        return np.vstack([feat(dates) for feat in time_features_from_frequency_str(freq)]).transpose(1,0)

@@ -28,6 +28,7 @@ class Exp_Informer(Exp_Basic):
             'informerstack':InformerStack,
         }
         if self.args.model=='informer' or self.args.model=='informerstack':
+            e_layers = self.args.e_layers if self.args.model=='informer' else self.args.s_layers
             model = model_dict[self.args.model](
                 self.args.enc_in,
                 self.args.dec_in, 
@@ -38,7 +39,7 @@ class Exp_Informer(Exp_Basic):
                 self.args.factor,
                 self.args.d_model, 
                 self.args.n_heads, 
-                self.args.e_layers,
+                e_layers, # self.args.e_layers,
                 self.args.d_layers, 
                 self.args.d_ff,
                 self.args.dropout, 
@@ -83,6 +84,7 @@ class Exp_Informer(Exp_Basic):
             size=[args.seq_len, args.label_len, args.pred_len],
             features=args.features,
             target=args.target,
+            inverse=args.inverse,
             timeenc=timeenc,
             freq=freq
         )
@@ -129,6 +131,8 @@ class Exp_Informer(Exp_Basic):
                     outputs = self.model(batch_x, batch_x_mark, dec_inp, batch_y_mark)[0]
                 else:
                     outputs = self.model(batch_x, batch_x_mark, dec_inp, batch_y_mark)
+            if self.args.inverse:
+                outputs = vali_data.inverse_transform(outputs)
             f_dim = -1 if self.args.features=='MS' else 0
             batch_y = batch_y[:,-self.args.pred_len:,f_dim:].to(self.device)
 
@@ -201,6 +205,8 @@ class Exp_Informer(Exp_Basic):
                     else:
                         outputs = self.model(batch_x, batch_x_mark, dec_inp, batch_y_mark)
 
+                    if self.args.inverse:
+                        outputs = train_data.inverse_transform(outputs)
                     f_dim = -1 if self.args.features=='MS' else 0
                     batch_y = batch_y[:,-self.args.pred_len:,f_dim:].to(self.device)
                     loss = criterion(outputs, batch_y)
@@ -270,6 +276,8 @@ class Exp_Informer(Exp_Basic):
                     outputs = self.model(batch_x, batch_x_mark, dec_inp, batch_y_mark)[0]
                 else:
                     outputs = self.model(batch_x, batch_x_mark, dec_inp, batch_y_mark)
+            if self.args.inverse:
+                outputs = test_data.inverse_transform(outputs)
             f_dim = -1 if self.args.features=='MS' else 0
             batch_y = batch_y[:,-self.args.pred_len:,f_dim:].to(self.device)
             
@@ -333,6 +341,8 @@ class Exp_Informer(Exp_Basic):
                     outputs = self.model(batch_x, batch_x_mark, dec_inp, batch_y_mark)[0]
                 else:
                     outputs = self.model(batch_x, batch_x_mark, dec_inp, batch_y_mark)
+            if self.args.inverse:
+                outputs = pred_data.inverse_transform(outputs)
             f_dim = -1 if self.args.features=='MS' else 0
             batch_y = batch_y[:,-self.args.pred_len:,f_dim:].to(self.device)
             
