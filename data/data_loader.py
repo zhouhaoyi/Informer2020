@@ -4,8 +4,9 @@ import pandas as pd
 
 import torch
 from torch.utils.data import Dataset, DataLoader
-from sklearn.preprocessing import StandardScaler
+# from sklearn.preprocessing import StandardScaler
 
+from utils.tools import StandardScaler
 from utils.timefeatures import time_features
 
 import warnings
@@ -14,7 +15,7 @@ warnings.filterwarnings('ignore')
 class Dataset_ETT_hour(Dataset):
     def __init__(self, root_path, flag='train', size=None, 
                  features='S', data_path='ETTh1.csv', 
-                 target='OT', scale=True, timeenc=0, freq='h'):
+                 target='OT', scale=True, inverse=False, timeenc=0, freq='h'):
         # size [seq_len, label_len, pred_len]
         # info
         if size == None:
@@ -33,6 +34,7 @@ class Dataset_ETT_hour(Dataset):
         self.features = features
         self.target = target
         self.scale = scale
+        self.inverse = inverse
         self.timeenc = timeenc
         self.freq = freq
 
@@ -65,18 +67,13 @@ class Dataset_ETT_hour(Dataset):
             
         df_stamp = df_raw[['date']][border1:border2]
         df_stamp['date'] = pd.to_datetime(df_stamp.date)
-        if self.timeenc==0:
-            df_stamp['month'] = df_stamp.date.apply(lambda row:row.month,1)
-            df_stamp['day'] = df_stamp.date.apply(lambda row:row.day,1)
-            df_stamp['weekday'] = df_stamp.date.apply(lambda row:row.weekday(),1)
-            df_stamp['hour'] = df_stamp.date.apply(lambda row:row.hour,1)
-            data_stamp = df_stamp.drop(['date'],1).values
-        elif self.timeenc==1:
-            data_stamp = time_features(pd.to_datetime(df_stamp['date'].values), freq=self.freq)
-            data_stamp = data_stamp.transpose(1,0)
+        data_stamp = time_features(df_stamp, timeenc=self.timeenc, freq=self.freq)
 
         self.data_x = data[border1:border2]
-        self.data_y = data[border1:border2]
+        if self.inverse:
+            self.data_y = df_data.values[border1:border2]
+        else:
+            self.data_y = data[border1:border2]
         self.data_stamp = data_stamp
     
     def __getitem__(self, index):
@@ -101,7 +98,7 @@ class Dataset_ETT_hour(Dataset):
 class Dataset_ETT_minute(Dataset):
     def __init__(self, root_path, flag='train', size=None, 
                  features='S', data_path='ETTm1.csv', 
-                 target='OT', scale=True, timeenc=0, freq='t'):
+                 target='OT', scale=True, inverse=False, timeenc=0, freq='t'):
         # size [seq_len, label_len, pred_len]
         # info
         if size == None:
@@ -120,6 +117,7 @@ class Dataset_ETT_minute(Dataset):
         self.features = features
         self.target = target
         self.scale = scale
+        self.inverse = inverse
         self.timeenc = timeenc
         self.freq = freq
         
@@ -152,20 +150,13 @@ class Dataset_ETT_minute(Dataset):
             
         df_stamp = df_raw[['date']][border1:border2]
         df_stamp['date'] = pd.to_datetime(df_stamp.date)
-        if self.timeenc==0:
-            df_stamp['month'] = df_stamp.date.apply(lambda row:row.month,1)
-            df_stamp['day'] = df_stamp.date.apply(lambda row:row.day,1)
-            df_stamp['weekday'] = df_stamp.date.apply(lambda row:row.weekday(),1)
-            df_stamp['hour'] = df_stamp.date.apply(lambda row:row.hour,1)
-            df_stamp['minute'] = df_stamp.date.apply(lambda row:row.minute,1)
-            df_stamp['minute'] = df_stamp.minute.map(lambda x:x//15)
-            data_stamp = df_stamp.drop(['date'],1).values
-        elif self.timeenc==1:
-            data_stamp = time_features(pd.to_datetime(df_stamp['date'].values), freq=self.freq)
-            data_stamp = data_stamp.transpose(1,0)
+        data_stamp = time_features(df_stamp, timeenc=self.timeenc, freq=self.freq)
         
         self.data_x = data[border1:border2]
-        self.data_y = data[border1:border2]
+        if self.inverse:
+            self.data_y = df_data.values[border1:border2]
+        else:
+            self.data_y = data[border1:border2]
         self.data_stamp = data_stamp
     
     def __getitem__(self, index):
@@ -191,7 +182,7 @@ class Dataset_ETT_minute(Dataset):
 class Dataset_Custom(Dataset):
     def __init__(self, root_path, flag='train', size=None, 
                  features='S', data_path='ETTh1.csv', 
-                 target='OT', scale=True, timeenc=0, freq='h'):
+                 target='OT', scale=True, inverse=False, timeenc=0, freq='h'):
         # size [seq_len, label_len, pred_len]
         # info
         if size == None:
@@ -210,6 +201,7 @@ class Dataset_Custom(Dataset):
         self.features = features
         self.target = target
         self.scale = scale
+        self.inverse = inverse
         self.timeenc = timeenc
         self.freq = freq
 
@@ -250,18 +242,13 @@ class Dataset_Custom(Dataset):
             
         df_stamp = df_raw[['date']][border1:border2]
         df_stamp['date'] = pd.to_datetime(df_stamp.date)
-        if self.timeenc==0:
-            df_stamp['month'] = df_stamp.date.apply(lambda row:row.month,1)
-            df_stamp['day'] = df_stamp.date.apply(lambda row:row.day,1)
-            df_stamp['weekday'] = df_stamp.date.apply(lambda row:row.weekday(),1)
-            df_stamp['hour'] = df_stamp.date.apply(lambda row:row.hour,1)
-            data_stamp = df_stamp.drop(['date'],1).values
-        elif self.timeenc==1:
-            data_stamp = time_features(pd.to_datetime(df_stamp['date'].values), freq=self.freq)
-            data_stamp = data_stamp.transpose(1,0)
+        data_stamp = time_features(df_stamp, timeenc=self.timeenc, freq=self.freq)
 
         self.data_x = data[border1:border2]
-        self.data_y = data[border1:border2]
+        if self.inverse:
+            self.data_y = df_data.values[border1:border2]
+        else:
+            self.data_y = data[border1:border2]
         self.data_stamp = data_stamp
     
     def __getitem__(self, index):
@@ -286,7 +273,7 @@ class Dataset_Custom(Dataset):
 class Dataset_Pred(Dataset):
     def __init__(self, root_path, flag='pred', size=None, 
                  features='S', data_path='ETTh1.csv', 
-                 target='OT', scale=True, timeenc=0, freq='15min'):
+                 target='OT', scale=True, inverse=False, timeenc=0, freq='15min'):
         # size [seq_len, label_len, pred_len]
         # info
         if size == None:
@@ -303,6 +290,7 @@ class Dataset_Pred(Dataset):
         self.features = features
         self.target = target
         self.scale = scale
+        self.inverse = inverse
         self.timeenc = timeenc
         self.freq = freq
 
@@ -341,19 +329,13 @@ class Dataset_Pred(Dataset):
         
         df_stamp = pd.DataFrame(columns = ['date'])
         df_stamp.date = list(tmp_stamp.date.values) + list(pred_dates[1:])
-        
-        if self.timeenc==0:
-            df_stamp['month'] = df_stamp.date.apply(lambda row:row.month,1)
-            df_stamp['day'] = df_stamp.date.apply(lambda row:row.day,1)
-            df_stamp['weekday'] = df_stamp.date.apply(lambda row:row.weekday(),1)
-            df_stamp['hour'] = df_stamp.date.apply(lambda row:row.hour,1)
-            data_stamp = df_stamp.drop(['date'],1).values
-        elif self.timeenc==1:
-            data_stamp = time_features(pd.to_datetime(df_stamp['date'].values), freq=self.freq[-1:])
-            data_stamp = data_stamp.transpose(1,0)
+        data_stamp = time_features(df_stamp, timeenc=self.timeenc, freq=self.freq[-1:])
 
         self.data_x = data[border1:border2]
-        self.data_y = data[border1:border2]
+        if self.inverse:
+            self.data_y = df_data.values[border1:border2]
+        else:
+            self.data_y = data[border1:border2]
         self.data_stamp = data_stamp
     
     def __getitem__(self, index):

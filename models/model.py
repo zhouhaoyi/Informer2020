@@ -83,7 +83,7 @@ class Informer(nn.Module):
 
 class InformerStack(nn.Module):
     def __init__(self, enc_in, dec_in, c_out, seq_len, label_len, out_len, 
-                factor=5, d_model=512, n_heads=8, e_layers=3, d_layers=2, d_ff=512, 
+                factor=5, d_model=512, n_heads=8, e_layers=[3,2,1], d_layers=2, d_ff=512, 
                 dropout=0.0, attn='prob', embed='fixed', freq='h', activation='gelu',
                 output_attention = False, distil=True,
                 device=torch.device('cuda:0')):
@@ -99,7 +99,7 @@ class InformerStack(nn.Module):
         Attn = ProbAttention if attn=='prob' else FullAttention
         # Encoder
 
-        stacks = list(range(e_layers, 2, -1)) # you can customize here
+        inp_lens = list(range(len(e_layers))) # [0,1,2,...] you can customize here
         encoders = [
             Encoder(
                 [
@@ -118,8 +118,8 @@ class InformerStack(nn.Module):
                     ) for l in range(el-1)
                 ] if distil else None,
                 norm_layer=torch.nn.LayerNorm(d_model)
-            ) for el in stacks]
-        self.encoder = EncoderStack(encoders)
+            ) for el in e_layers]
+        self.encoder = EncoderStack(encoders, inp_lens)
         # Decoder
         self.decoder = Decoder(
             [
