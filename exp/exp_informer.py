@@ -110,42 +110,14 @@ class Exp_Informer(Exp_Basic):
         self.model.eval()
         total_loss = []
         for i, (batch_x,batch_y,batch_x_mark,batch_y_mark) in enumerate(vali_loader):
-            batch_x = batch_x.float().to(self.device)
-            batch_y = batch_y.float()
-            
-            batch_x_mark = batch_x_mark.float().to(self.device)
-            batch_y_mark = batch_y_mark.float().to(self.device)
-
-            # decoder input
-            dec_inp = torch.zeros_like(batch_y[:,-self.args.pred_len:,:]).float()
-            dec_inp = torch.cat([batch_y[:,:self.args.label_len,:], dec_inp], dim=1).float().to(self.device)
-            # encoder - decoder
-            if self.args.use_amp:
-                with torch.cuda.amp.autocast():
-                    if self.args.output_attention:
-                        outputs = self.model(batch_x, batch_x_mark, dec_inp, batch_y_mark)[0]
-                    else:
-                        outputs = self.model(batch_x, batch_x_mark, dec_inp, batch_y_mark)
-            else:
-                if self.args.output_attention:
-                    outputs = self.model(batch_x, batch_x_mark, dec_inp, batch_y_mark)[0]
-                else:
-                    outputs = self.model(batch_x, batch_x_mark, dec_inp, batch_y_mark)
-            if self.args.inverse:
-                outputs = vali_data.inverse_transform(outputs)
-            f_dim = -1 if self.args.features=='MS' else 0
-            batch_y = batch_y[:,-self.args.pred_len:,f_dim:].to(self.device)
-
-            pred = outputs.detach().cpu()
-            true = batch_y.detach().cpu()
-
-            loss = criterion(pred, true) 
-
+            pred, true = self._process_one_batch(
+                vali_data, batch_x, batch_y, batch_x_mark, batch_y_mark)
+            loss = criterion(pred.detach().cpu(), true.detach().cpu())
             total_loss.append(loss)
         total_loss = np.average(total_loss)
         self.model.train()
         return total_loss
-        
+
     def train(self, setting):
         train_data, train_loader = self._get_data(flag = 'train')
         vali_data, vali_loader = self._get_data(flag = 'val')
@@ -176,41 +148,10 @@ class Exp_Informer(Exp_Basic):
                 iter_count += 1
                 
                 model_optim.zero_grad()
-                
-                batch_x = batch_x.float().to(self.device)
-                batch_y = batch_y.float()
-                
-                batch_x_mark = batch_x_mark.float().to(self.device)
-                batch_y_mark = batch_y_mark.float().to(self.device)
-
-                # decoder input
-                dec_inp = torch.zeros_like(batch_y[:,-self.args.pred_len:,:]).float()
-                dec_inp = torch.cat([batch_y[:,:self.args.label_len,:], dec_inp], dim=1).float().to(self.device)
-                
-                # encoder - decoder
-                if self.args.use_amp:
-                    with torch.cuda.amp.autocast():
-                        if self.args.output_attention:
-                            outputs = self.model(batch_x, batch_x_mark, dec_inp, batch_y_mark)[0]
-                        else:
-                            outputs = self.model(batch_x, batch_x_mark, dec_inp, batch_y_mark)
-
-                        f_dim = -1 if self.args.features=='MS' else 0
-                        batch_y = batch_y[:,-self.args.pred_len:,f_dim:].to(self.device)
-                        loss = criterion(outputs, batch_y)
-                        train_loss.append(loss.item())
-                else:
-                    if self.args.output_attention:
-                        outputs = self.model(batch_x, batch_x_mark, dec_inp, batch_y_mark)[0]
-                    else:
-                        outputs = self.model(batch_x, batch_x_mark, dec_inp, batch_y_mark)
-
-                    if self.args.inverse:
-                        outputs = train_data.inverse_transform(outputs)
-                    f_dim = -1 if self.args.features=='MS' else 0
-                    batch_y = batch_y[:,-self.args.pred_len:,f_dim:].to(self.device)
-                    loss = criterion(outputs, batch_y)
-                    train_loss.append(loss.item())
+                pred, true = self._process_one_batch(
+                    train_data, batch_x, batch_y, batch_x_mark, batch_y_mark)
+                loss = criterion(pred, true)
+                train_loss.append(loss.item())
                 
                 if (i+1) % 100==0:
                     print("\titers: {0}, epoch: {1} | loss: {2:.7f}".format(i + 1, epoch + 1, loss.item()))
@@ -256,36 +197,10 @@ class Exp_Informer(Exp_Basic):
         trues = []
         
         for i, (batch_x,batch_y,batch_x_mark,batch_y_mark) in enumerate(test_loader):
-            batch_x = batch_x.float().to(self.device)
-            batch_y = batch_y.float()
-            batch_x_mark = batch_x_mark.float().to(self.device)
-            batch_y_mark = batch_y_mark.float().to(self.device)
-
-            # decoder input
-            dec_inp = torch.zeros_like(batch_y[:,-self.args.pred_len:,:]).float()
-            dec_inp = torch.cat([batch_y[:,:self.args.label_len,:], dec_inp], dim=1).float().to(self.device)
-            # encoder - decoder
-            if self.args.use_amp:
-                with torch.cuda.amp.autocast():
-                    if self.args.output_attention:
-                        outputs = self.model(batch_x, batch_x_mark, dec_inp, batch_y_mark)[0]
-                    else:
-                        outputs = self.model(batch_x, batch_x_mark, dec_inp, batch_y_mark)
-            else:
-                if self.args.output_attention:
-                    outputs = self.model(batch_x, batch_x_mark, dec_inp, batch_y_mark)[0]
-                else:
-                    outputs = self.model(batch_x, batch_x_mark, dec_inp, batch_y_mark)
-            if self.args.inverse:
-                outputs = test_data.inverse_transform(outputs)
-            f_dim = -1 if self.args.features=='MS' else 0
-            batch_y = batch_y[:,-self.args.pred_len:,f_dim:].to(self.device)
-            
-            pred = outputs.detach().cpu().numpy()#.squeeze()
-            true = batch_y.detach().cpu().numpy()#.squeeze()
-            
-            preds.append(pred)
-            trues.append(true)
+            pred, true = self._process_one_batch(
+                test_data, batch_x, batch_y, batch_x_mark, batch_y_mark)
+            preds.append(pred.detach().cpu().numpy())
+            trues.append(true.detach().cpu().numpy())
 
         preds = np.array(preds)
         trues = np.array(trues)
@@ -321,34 +236,9 @@ class Exp_Informer(Exp_Basic):
         preds = []
         
         for i, (batch_x,batch_y,batch_x_mark,batch_y_mark) in enumerate(pred_loader):
-            batch_x = batch_x.float().to(self.device)
-            batch_y = batch_y.float()
-            batch_x_mark = batch_x_mark.float().to(self.device)
-            batch_y_mark = batch_y_mark.float().to(self.device)
-
-            # decoder input
-            dec_inp = torch.zeros([batch_y.shape[0], self.args.pred_len, batch_y.shape[-1]]).float()
-            dec_inp = torch.cat([batch_y[:,:self.args.label_len,:], dec_inp], dim=1).float().to(self.device)
-            # encoder - decoder
-            if self.args.use_amp:
-                with torch.cuda.amp.autocast():
-                    if self.args.output_attention:
-                        outputs = self.model(batch_x, batch_x_mark, dec_inp, batch_y_mark)[0]
-                    else:
-                        outputs = self.model(batch_x, batch_x_mark, dec_inp, batch_y_mark)
-            else:
-                if self.args.output_attention:
-                    outputs = self.model(batch_x, batch_x_mark, dec_inp, batch_y_mark)[0]
-                else:
-                    outputs = self.model(batch_x, batch_x_mark, dec_inp, batch_y_mark)
-            if self.args.inverse:
-                outputs = pred_data.inverse_transform(outputs)
-            f_dim = -1 if self.args.features=='MS' else 0
-            batch_y = batch_y[:,-self.args.pred_len:,f_dim:].to(self.device)
-            
-            pred = outputs.detach().cpu().numpy()#.squeeze()
-            
-            preds.append(pred)
+            pred, true = self._process_one_batch(
+                pred_data, batch_x, batch_y, batch_x_mark, batch_y_mark)
+            preds.append(pred.detach().cpu().numpy())
 
         preds = np.array(preds)
         preds = preds.reshape(-1, preds.shape[-2], preds.shape[-1])
@@ -361,3 +251,32 @@ class Exp_Informer(Exp_Basic):
         np.save(folder_path+'real_prediction.npy', preds)
         
         return
+
+    def _process_one_batch(self, dataset_object, batch_x, batch_y, batch_x_mark, batch_y_mark):
+        batch_x = batch_x.float().to(self.device)
+        batch_y = batch_y.float()
+
+        batch_x_mark = batch_x_mark.float().to(self.device)
+        batch_y_mark = batch_y_mark.float().to(self.device)
+
+        # decoder input
+        dec_inp = torch.zeros_like(batch_y[:,-self.args.pred_len:,:]).float()
+        dec_inp = torch.cat([batch_y[:,:self.args.label_len,:], dec_inp], dim=1).float().to(self.device)
+        # encoder - decoder
+        if self.args.use_amp:
+            with torch.cuda.amp.autocast():
+                if self.args.output_attention:
+                    outputs = self.model(batch_x, batch_x_mark, dec_inp, batch_y_mark)[0]
+                else:
+                    outputs = self.model(batch_x, batch_x_mark, dec_inp, batch_y_mark)
+        else:
+            if self.args.output_attention:
+                outputs = self.model(batch_x, batch_x_mark, dec_inp, batch_y_mark)[0]
+            else:
+                outputs = self.model(batch_x, batch_x_mark, dec_inp, batch_y_mark)
+        if self.args.inverse:
+            outputs = dataset_object.inverse_transform(outputs)
+        f_dim = -1 if self.args.features=='MS' else 0
+        batch_y = batch_y[:,-self.args.pred_len:,f_dim:].to(self.device)
+
+        return outputs, batch_y
