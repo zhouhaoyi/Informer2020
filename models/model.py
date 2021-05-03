@@ -12,7 +12,7 @@ class Informer(nn.Module):
     def __init__(self, enc_in, dec_in, c_out, seq_len, label_len, out_len, 
                 factor=5, d_model=512, n_heads=8, e_layers=3, d_layers=2, d_ff=512, 
                 dropout=0.0, attn='prob', embed='fixed', freq='h', activation='gelu', 
-                output_attention = False, distil=True,
+                output_attention = False, distil=True, mix=True,
                 device=torch.device('cuda:0')):
         super(Informer, self).__init__()
         self.pred_len = out_len
@@ -29,7 +29,7 @@ class Informer(nn.Module):
             [
                 EncoderLayer(
                     AttentionLayer(Attn(False, factor, attention_dropout=dropout, output_attention=output_attention), 
-                                d_model, n_heads),
+                                d_model, n_heads, mix=False),
                     d_model,
                     d_ff,
                     dropout=dropout,
@@ -48,9 +48,9 @@ class Informer(nn.Module):
             [
                 DecoderLayer(
                     AttentionLayer(Attn(True, factor, attention_dropout=dropout, output_attention=False), 
-                                d_model, n_heads),
+                                d_model, n_heads, mix=mix),
                     AttentionLayer(FullAttention(False, factor, attention_dropout=dropout, output_attention=False), 
-                                d_model, n_heads),
+                                d_model, n_heads, mix=False),
                     d_model,
                     d_ff,
                     dropout=dropout,
@@ -105,7 +105,7 @@ class InformerStack(nn.Module):
                 [
                     EncoderLayer(
                         AttentionLayer(Attn(False, factor, attention_dropout=dropout, output_attention=output_attention), 
-                                    d_model, n_heads),
+                                    d_model, n_heads, mix=False),
                         d_model,
                         d_ff,
                         dropout=dropout,
@@ -125,9 +125,9 @@ class InformerStack(nn.Module):
             [
                 DecoderLayer(
                     AttentionLayer(Attn(True, factor, attention_dropout=dropout, output_attention=False), 
-                                d_model, n_heads),
+                                d_model, n_heads, mix=mix),
                     AttentionLayer(FullAttention(False, factor, attention_dropout=dropout, output_attention=False), 
-                                d_model, n_heads),
+                                d_model, n_heads, mix=False),
                     d_model,
                     d_ff,
                     dropout=dropout,

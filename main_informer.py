@@ -31,6 +31,7 @@ parser.add_argument('--d_layers', type=int, default=1, help='num of decoder laye
 parser.add_argument('--s_layers', type=str, default='3,2,1', help='num of stack encoder layers')
 parser.add_argument('--d_ff', type=int, default=2048, help='dimension of fcn')
 parser.add_argument('--factor', type=int, default=5, help='probsparse attn factor')
+parser.add_argument('--padding', type=int, default=0, help='padding type')
 parser.add_argument('--distil', action='store_false', help='whether to use distilling in encoder, using this argument means not using distilling', default=True)
 parser.add_argument('--dropout', type=float, default=0.05, help='dropout')
 parser.add_argument('--attn', type=str, default='prob', help='attention used in encoder, options:[prob, full]')
@@ -38,6 +39,7 @@ parser.add_argument('--embed', type=str, default='timeF', help='time features en
 parser.add_argument('--activation', type=str, default='gelu',help='activation')
 parser.add_argument('--output_attention', action='store_true', help='whether to output attention in ecoder')
 parser.add_argument('--do_predict', action='store_true', help='whether to predict unseen future data')
+parser.add_argument('--mix', action='store_false', help='use mix attention in generative decoder', default=True)
 
 parser.add_argument('--num_workers', type=int, default=0, help='data loader num workers')
 parser.add_argument('--itr', type=int, default=2, help='experiments times')
@@ -71,6 +73,9 @@ data_parser = {
     'ETTh2':{'data':'ETTh2.csv','T':'OT','M':[7,7,7],'S':[1,1,1],'MS':[7,7,1]},
     'ETTm1':{'data':'ETTm1.csv','T':'OT','M':[7,7,7],'S':[1,1,1],'MS':[7,7,1]},
     'ETTm2':{'data':'ETTm2.csv','T':'OT','M':[7,7,7],'S':[1,1,1],'MS':[7,7,1]},
+    'WTH':{'data':'WTH.csv','T':'WetBulbCelsius','M':[12,12,12],'S':[1,1,1],'MS':[12,12,1]},
+    'ECL':{'data':'ECL.csv','T':'MT_320','M':[321,321,321],'S':[1,1,1],'MS':[321,321,1]},
+    'Solar':{'data':'solar_AL.csv','T':'POWER_136','M':[137,137,137],'S':[1,1,1],'MS':[137,137,1]},
 }
 if args.data in data_parser.keys():
     data_info = data_parser[args.data]
@@ -89,9 +94,10 @@ Exp = Exp_Informer
 
 for ii in range(args.itr):
     # setting record of experiments
-    setting = '{}_{}_ft{}_sl{}_ll{}_pl{}_dm{}_nh{}_el{}_dl{}_df{}_at{}_fc{}_eb{}_dt{}_{}_{}'.format(args.model, args.data, args.features, 
+    setting = '{}_{}_ft{}_sl{}_ll{}_pl{}_dm{}_nh{}_el{}_dl{}_df{}_at{}_fc{}_eb{}_dt{}_mx{}_{}_{}'.format(args.model, args.data, args.features, 
                 args.seq_len, args.label_len, args.pred_len,
-                args.d_model, args.n_heads, args.e_layers, args.d_layers, args.d_ff, args.attn, args.factor, args.embed, args.distil, args.des, ii)
+                args.d_model, args.n_heads, args.e_layers, args.d_layers, args.d_ff, args.attn, args.factor, 
+                args.embed, args.distil, args.mix, args.des, ii)
 
     exp = Exp(args) # set experiments
     print('>>>>>>>start training : {}>>>>>>>>>>>>>>>>>>>>>>>>>>'.format(setting))

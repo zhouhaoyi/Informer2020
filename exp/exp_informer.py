@@ -49,6 +49,7 @@ class Exp_Informer(Exp_Basic):
                 self.args.activation,
                 self.args.output_attention,
                 self.args.distil,
+                self.args.mix,
                 self.device
             ).float()
         
@@ -64,6 +65,9 @@ class Exp_Informer(Exp_Basic):
             'ETTh2':Dataset_ETT_hour,
             'ETTm1':Dataset_ETT_minute,
             'ETTm2':Dataset_ETT_minute,
+            'WTH':Dataset_Custom,
+            'ECL':Dataset_Custom,
+            'Solar':Dataset_Custom,
             'custom':Dataset_Custom,
         }
         Data = data_dict[self.args.data]
@@ -260,7 +264,10 @@ class Exp_Informer(Exp_Basic):
         batch_y_mark = batch_y_mark.float().to(self.device)
 
         # decoder input
-        dec_inp = torch.zeros_like(batch_y[:,-self.args.pred_len:,:]).float()
+        if self.args.padding==0:
+            dec_inp = torch.zeros([batch_y.shape[0], self.args.pred_len, batch_y.shape[-1]]).float()
+        elif self.args.padding==1:
+            dec_inp = torch.ones([batch_y.shape[0], self.args.pred_len, batch_y.shape[-1]]).float()
         dec_inp = torch.cat([batch_y[:,:self.args.label_len,:], dec_inp], dim=1).float().to(self.device)
         # encoder - decoder
         if self.args.use_amp:

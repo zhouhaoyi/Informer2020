@@ -122,12 +122,12 @@ class ProbAttention(nn.Module):
         # update the context with selected top_k queries
         context, attn = self._update_context(context, values, scores_top, index, L_Q, attn_mask)
         
-        return context.contiguous(), attn
+        return context.transpose(2,1).contiguous(), attn
 
 
 class AttentionLayer(nn.Module):
-    def __init__(self, attention, d_model, n_heads, d_keys=None,
-                 d_values=None):
+    def __init__(self, attention, d_model, n_heads, 
+                 d_keys=None, d_values=None, mix=False):
         super(AttentionLayer, self).__init__()
 
         d_keys = d_keys or (d_model//n_heads)
@@ -139,6 +139,7 @@ class AttentionLayer(nn.Module):
         self.value_projection = nn.Linear(d_model, d_values * n_heads)
         self.out_projection = nn.Linear(d_values * n_heads, d_model)
         self.n_heads = n_heads
+        self.mix = mix
 
     def forward(self, queries, keys, values, attn_mask):
         B, L, _ = queries.shape
@@ -155,6 +156,8 @@ class AttentionLayer(nn.Module):
             values,
             attn_mask
         )
+        if self.mix:
+            out = out.transpose(2,1).contiguous()
         out = out.view(B, L, -1)
 
         return self.out_projection(out), attn

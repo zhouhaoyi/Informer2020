@@ -173,7 +173,7 @@ class Dataset_ETT_minute(Dataset):
         return seq_x, seq_y, seq_x_mark, seq_y_mark
     
     def __len__(self):
-        return len(self.data_x) - self.seq_len- self.pred_len + 1
+        return len(self.data_x) - self.seq_len - self.pred_len + 1
 
     def inverse_transform(self, data):
         return self.scaler.inverse_transform(data)
