@@ -180,7 +180,7 @@ class Dataset_ETT_minute(Dataset):
 
 
 class Dataset_Custom(Dataset):
-    def __init__(self, root_path, flag='train', size=None, 
+    def __init__(self, root_path, cols, flag='train', size=None, 
                  features='S', data_path='ETTh1.csv', 
                  target='OT', scale=True, inverse=False, timeenc=0, freq='h'):
         # size [seq_len, label_len, pred_len]
@@ -216,8 +216,10 @@ class Dataset_Custom(Dataset):
         '''
         df_raw.columns: ['date', ...(other features), target feature]
         '''
-        cols = list(df_raw.columns); cols.remove(self.target); cols.remove('date')
-        df_raw = df_raw[['date']+cols+[self.target]]
+        # cols = list(df_raw.columns); 
+        cols2=self.cols.copy()
+        cols2.remove(self.target); 
+        df_raw = df_raw[['date']+cols2+[self.target]]
 
         num_train = int(len(df_raw)*0.7)
         num_test = int(len(df_raw)*0.2)
@@ -271,7 +273,7 @@ class Dataset_Custom(Dataset):
         return self.scaler.inverse_transform(data)
 
 class Dataset_Pred(Dataset):
-    def __init__(self, root_path, flag='pred', size=None, 
+    def __init__(self, root_path, cols, flag='pred', size=None, 
                  features='S', data_path='ETTh1.csv', 
                  target='OT', scale=True, inverse=False, timeenc=0, freq='15min'):
         # size [seq_len, label_len, pred_len]
@@ -305,8 +307,9 @@ class Dataset_Pred(Dataset):
         '''
         df_raw.columns: ['date', ...(other features), target feature]
         '''
-        cols = list(df_raw.columns); cols.remove(self.target); cols.remove('date')
-        df_raw = df_raw[['date']+cols+[self.target]]
+        cols2=self.cols.copy()
+        cols2.remove(self.target); 
+        df_raw = df_raw[['date']+cols2+[self.target]]
         
         border1 = len(df_raw)-self.seq_len
         border2 = len(df_raw)

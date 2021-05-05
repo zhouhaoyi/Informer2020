@@ -83,6 +83,7 @@ class Exp_Informer(Exp_Basic):
         
         data_set = Data(
             root_path=args.root_path,
+            cols=args.cols,
             data_path=args.data_path,
             flag=flag,
             size=[args.seq_len, args.label_len, args.pred_len],
