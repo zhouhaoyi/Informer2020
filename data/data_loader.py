@@ -217,8 +217,12 @@ class Dataset_Custom(Dataset):
         df_raw.columns: ['date', ...(other features), target feature]
         '''
         # cols = list(df_raw.columns); 
-        cols2=self.cols.copy()
-        cols2.remove(self.target); 
+        if self.cols:
+            cols2=self.cols.copy()
+            cols2.remove(self.target)
+        else:
+            cols2 = list(df_raw.columns); cols2.remove(self.target); cols2.remove('date')
+            
         df_raw = df_raw[['date']+cols2+[self.target]]
 
         num_train = int(len(df_raw)*0.7)
@@ -295,7 +299,7 @@ class Dataset_Pred(Dataset):
         self.inverse = inverse
         self.timeenc = timeenc
         self.freq = freq
-
+        self.cols=cols
         self.root_path = root_path
         self.data_path = data_path
         self.__read_data__()
@@ -307,8 +311,11 @@ class Dataset_Pred(Dataset):
         '''
         df_raw.columns: ['date', ...(other features), target feature]
         '''
-        cols2=self.cols.copy()
-        cols2.remove(self.target); 
+        if self.cols:
+            cols2=self.cols.copy()
+            cols2.remove(self.target)
+        else:
+            cols2 = list(df_raw.columns); cols2.remove(self.target); cols2.remove('date')
         df_raw = df_raw[['date']+cols2+[self.target]]
         
         border1 = len(df_raw)-self.seq_len
