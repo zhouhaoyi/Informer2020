@@ -110,8 +110,10 @@ If you find this repository useful in your research, please consider citing the 
                Hui Xiong and
                Wancai Zhang},
   title     = {Informer: Beyond Efficient Transformer for Long Sequence Time-Series Forecasting},
-  booktitle = {The Thirty-Fifth {AAAI} Conference on Artificial Intelligence, {AAAI} 2021},
-  pages     = {online},
+  booktitle = {The Thirty-Fifth {AAAI} Conference on Artificial Intelligence, {AAAI} 2021, Virtual Conference},
+  volume    = {35},
+  number    = {12},
+  pages     = {11106--11115},
   publisher = {{AAAI} Press},
   year      = {2021},
 }
