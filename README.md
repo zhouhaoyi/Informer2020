@@ -53,6 +53,10 @@ The required data files should be put into `data/ETT/` folder. A demo slice of t
 <b>Figure 3.</b> An example of the ETT data.
 </p>
 
+ECL data and Weather data can be download here.
+- [Google Drive](https://drive.google.com/drive/folders/1ohGYWWohJlOlb2gsGTeEq3Wii2egnEPR?usp=sharing)
+- [BaiduPan](https://pan.baidu.com/s/1wyaGUisUICYHnfkZzWCwyA) : 6gan 
+
 
 ## Usage
 <span id="colablink">Colab Examples:</span> We provide google colabs to help reproducing and customing our repo, which includes `experiments(train and test)`, `prediction`, `visualization` and `custom data`.
