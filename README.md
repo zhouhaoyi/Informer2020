@@ -53,7 +53,7 @@ The required data files should be put into `data/ETT/` folder. A demo slice of t
 <b>Figure 3.</b> An example of the ETT data.
 </p>
 
-ECL data and Weather data can be download here.
+The ECL data and Weather data can be download here.
 - [Google Drive](https://drive.google.com/drive/folders/1ohGYWWohJlOlb2gsGTeEq3Wii2egnEPR?usp=sharing)
 - [BaiduPan](https://pan.baidu.com/s/1wyaGUisUICYHnfkZzWCwyA) : 6gan 
 
