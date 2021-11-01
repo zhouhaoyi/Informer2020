@@ -12,6 +12,13 @@ DOCKER_PARAMETERS := \
 init:
 	docker build -t ${IMAGE} .
 
+dataset:
+	mkdir -p data/ETT && \
+		wget https://raw.githubusercontent.com/zhouhaoyi/ETDataset/main/ETT-small/ETTh1.csv -P data/ETT && \
+		wget https://raw.githubusercontent.com/zhouhaoyi/ETDataset/main/ETT-small/ETTh2.csv -P data/ETT && \
+		wget https://raw.githubusercontent.com/zhouhaoyi/ETDataset/main/ETT-small/ETTm1.csv -P data/ETT && \
+		wget https://raw.githubusercontent.com/zhouhaoyi/ETDataset/main/ETT-small/ETTm2.csv -P data/ETT
+
 jupyter:
 	docker run -d --rm ${DOCKER_PARAMETERS} -e HOME=/tmp -p ${PORT}:8888 ${IMAGE} \
 		bash -c "jupyter lab --ip=0.0.0.0 --no-browser --NotebookApp.token=''"
