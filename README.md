@@ -55,14 +55,18 @@ The required data files should be put into `data/ETT/` folder. A demo slice of t
 
 The ECL data and Weather data can be download here.
 - [Google Drive](https://drive.google.com/drive/folders/1ohGYWWohJlOlb2gsGTeEq3Wii2egnEPR?usp=sharing)
-- [BaiduPan](https://pan.baidu.com/s/1wyaGUisUICYHnfkZzWCwyA) : 6gan 
+- [BaiduPan](https://pan.baidu.com/s/1wyaGUisUICYHnfkZzWCwyA), password: 6gan 
 
 ## Reproducibility
 
 To easily reproduce the results you can follow the next steps:
 1. Initialize the docker image using: `make init`.
 2. Download the datasets using: `make dataset`.
-3. Run each script in `scripts/` using `make run_module module="bash ETTh1.sh"` for each script or `for file in `ls scripts`; do make run_module module="bash scripts/$script"; done`
+3. Run each script in `scripts/` using `make run_module module="bash ETTh1.sh"` for each script.
+4. Alternatively, run all the scripts at once:
+```
+for file in `ls scripts`; do make run_module module="bash scripts/$script"; done
+```
 
 ## Usage
 <span id="colablink">Colab Examples:</span> We provide google colabs to help reproducing and customing our repo, which includes `experiments(train and test)`, `prediction`, `visualization` and `custom data`.
