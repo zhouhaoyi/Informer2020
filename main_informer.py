@@ -33,11 +33,14 @@ parser.add_argument('--d_ff', type=int, default=2048, help='dimension of fcn')
 parser.add_argument('--factor', type=int, default=5, help='probsparse attn factor')
 parser.add_argument('--padding', type=int, default=0, help='padding type')
 parser.add_argument('--distil', action='store_false', help='whether to use distilling in encoder, using this argument means not using distilling', default=True)
+parser.add_argument('--CSP', action='store_true', help='whether to use CSPAttention, default=False', default=False)
+parser.add_argument('--dilated', action='store_true', help='whether to use dilated causal convolution in encoder, default=False', default=False)
+parser.add_argument('--passthrough', action='store_true', help='whether to use passthrough mechanism in encoder, default=False', default=False)
 parser.add_argument('--dropout', type=float, default=0.05, help='dropout')
-parser.add_argument('--attn', type=str, default='prob', help='attention used in encoder, options:[prob, full]')
+parser.add_argument('--attn', type=str, default='prob', help='attention used in encoder, options:[prob, full, log]')
 parser.add_argument('--embed', type=str, default='timeF', help='time features encoding, options:[timeF, fixed, learned]')
 parser.add_argument('--activation', type=str, default='gelu',help='activation')
-parser.add_argument('--output_attention', action='store_true', help='whether to output attention in ecoder')
+parser.add_argument('--output_attention', action='store_true', help='whether to output attention in encoder')
 parser.add_argument('--do_predict', action='store_true', help='whether to predict unseen future data')
 parser.add_argument('--mix', action='store_false', help='use mix attention in generative decoder', default=True)
 parser.add_argument('--cols', type=str, nargs='+', help='certain cols from the data files as the input features')
@@ -94,10 +97,10 @@ Exp = Exp_Informer
 
 for ii in range(args.itr):
     # setting record of experiments
-    setting = '{}_{}_ft{}_sl{}_ll{}_pl{}_dm{}_nh{}_el{}_dl{}_df{}_at{}_fc{}_eb{}_dt{}_mx{}_{}_{}'.format(args.model, args.data, args.features, 
+    setting = '{}_{}_ft{}_sl{}_ll{}_pl{}_dm{}_nh{}_el{}_dl{}_df{}_at{}_fc{}_eb{}_dt{}_csp{}_dilate{}_pt{}_mx{}_{}_{}'.format(args.model, args.data, args.features,
                 args.seq_len, args.label_len, args.pred_len,
-                args.d_model, args.n_heads, args.e_layers, args.d_layers, args.d_ff, args.attn, args.factor, 
-                args.embed, args.distil, args.mix, args.des, ii)
+                args.d_model, args.n_heads, args.e_layers, args.d_layers, args.d_ff, args.attn, args.factor,
+                 args.embed, args.distil, args.CSP, args.dilated, args.passthrough, args.mix, args.des, ii)
 
     exp = Exp(args) # set experiments
     print('>>>>>>>start training : {}>>>>>>>>>>>>>>>>>>>>>>>>>>'.format(setting))
@@ -111,3 +114,4 @@ for ii in range(args.itr):
         exp.predict(setting, True)
 
     torch.cuda.empty_cache()
+    
