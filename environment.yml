@@ -11,6 +11,5 @@ dependencies:
   - scikit-learn
   - pytorch
   - torchmetrics
-  - pytorch-lightning
   - python-dotenv
   - pre-commit
