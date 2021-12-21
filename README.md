@@ -1,11 +1,14 @@
 # Informer: Beyond Efficient Transformer for Long Sequence Time-Series Forecasting (AAAI'21 Best Paper)
-![Python 3.6](https://img.shields.io/badge/python-3.6-green.svg?style=plastic)
+![Python 3.8](https://img.shields.io/badge/python-3.8-green.svg?style=plastic)
 ![PyTorch 1.2](https://img.shields.io/badge/PyTorch%20-%23EE4C2C.svg?style=plastic)
 ![cuDNN 7.3.1](https://img.shields.io/badge/cudnn-7.3.1-green.svg?style=plastic)
 ![License CC BY-NC-SA](https://img.shields.io/badge/license-CC_BY--NC--SA--green.svg?style=plastic)
 
 This is the origin Pytorch implementation of Informer in the following paper:
 [Informer: Beyond Efficient Transformer for Long Sequence Time-Series Forecasting](https://arxiv.org/abs/2012.07436). Special thanks to `Jieqi Peng`@[cookieminions](https://github.com/cookieminions) for building this repo.
+
+
+:triangular_flag_on_post:**News**(Dec 21, 2021): update repo to include improvements found in Tightly-Coupled Convolutional Transformer on Time Series Forecasting paper[1][2]. Additions include CSPAttention, Dilated Causal Convolution, Passthrough Mechanism and LogSparse Attention[3][4].
 
 :triangular_flag_on_post:**News**(Mar 25, 2021): We update all experiment [results](#resultslink) with hyperparameter settings.
 
@@ -28,18 +31,19 @@ The self-attention scores form a long-tail distribution, where the "active" quer
 <b>Figure 2.</b> The illustration of ProbSparse Attention.
 </p>
 
-## Requirements
+## CSPAttention
+A self-attention mechanism mirroring CSPNet belonging to CNN. It cuts down nearly 30% of memory occupation and 50% of time complexity of self-attention mechanism while achieving equivalent or superior forecasting accuracy. [1][2]
 
-- Python 3.6
-- matplotlib == 3.1.1
-- numpy == 1.19.4
-- pandas == 0.25.1
-- scikit_learn == 0.21.3
-- torch == 1.8.0
+## Dilated Causal Convolution
+It replaces canonical convolution to connect self-attention blocks. It helps Transformer model acquire exponentially receptive field growth with a little more negligible computation cost. Therefore, the learning capability of Transformer is strengthened. [1][2]
 
-Dependencies can be installed using the following command:
+## Passthrough Mechanism
+It concatenates feature maps of different scales of self-attention blocks, thus getting more fine-grained information. Alike to feature pyramids commonly used in CNN and image processing, it expands feature maps leading to better forecasting performance of Transformer model. [1][2]
+
+## Enviroment 
+use the conda env found in the environment.yml
 ```bash
-pip install -r requirements.txt
+conda create -f environment.yml
 ```
 
 ## Data
@@ -209,3 +213,13 @@ If you have any questions, feel free to contact Haoyi Zhou through Email (zhouha
 Thanks for the computing infrastructure provided by Beijing Advanced Innovation Center for Big Data and Brain Computing ([BDBC](http://bdbc.buaa.edu.cn/)).
 At the same time, thank you all for your attention to this work! [![Hits](https://hits.seeyoufarm.com/api/count/incr/badge.svg?url=https%3A%2F%2Fgithub.com%2Fzhouhaoyi%2FInformer2020&count_bg=%2379C83D&title_bg=%23555555&icon=&icon_color=%23E7E7E7&title=Hits+Count&edge_flat=false)](https://hits.seeyoufarm.com)
 [![Stargazers repo roster for @zhouhaoyi/Informer2020](https://reporoster.com/stars/zhouhaoyi/Informer2020)](https://github.com/zhouhaoyi/Informer2020/stargazers)
+
+## Reference
+[1]https://arxiv.org/abs/2108.12784
+
+[2] https://github.com/OrigamiSL/TCCT2021
+
+[3] Li, S., Jin, X., Xuan, Y., Zhou, X., Chen, W., Wang, Y. X., & Yan, X. (2019). Enhancing the locality and breaking the memory bottleneck of transformer on time series forecasting. arXiv preprint arXiv:1907.00235.
+
+[4]https://github.com/AIStream-Peelout/flow-forecast
+
