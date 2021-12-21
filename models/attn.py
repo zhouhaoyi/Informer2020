@@ -1,22 +1,22 @@
+import math
+from math import log, sqrt
+
+import numpy as np
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
 
-import numpy as np
+from utils.masking import ProbMask, TriangularCausalMask
 
-import math
-from math import sqrt
-from math import log
-from utils.masking import TriangularCausalMask, ProbMask
 
 class FullAttention(nn.Module):
     def __init__(self, mask_flag=True, factor=5, scale=None, attention_dropout=0.1, output_attention=False):
-        super(FullAttention, self).__init__()
+        super().__init__()
         self.scale = scale
         self.mask_flag = mask_flag
         self.output_attention = output_attention
         self.dropout = nn.Dropout(attention_dropout)
-        
+
     def forward(self, queries, keys, values, attn_mask):
         B, L, H, E = queries.shape
         _, S, _, D = values.shape
@@ -31,7 +31,7 @@ class FullAttention(nn.Module):
 
         A = self.dropout(torch.softmax(scale * scores, dim=-1))
         V = torch.einsum("bhls,bshd->blhd", A, values)
-        
+
         if self.output_attention:
             return (V.contiguous(), A)
         else:
@@ -39,7 +39,7 @@ class FullAttention(nn.Module):
 
 class LogSparceAttention(nn.Module):
     def __init__(self, mask_flag=True, factor=5, scale=None, attention_dropout=0.1, output_attention=False):
-        super(LogSparceAttention, self).__init__()
+        super().__init__()
         self.scale = scale
         self.mask_flag = mask_flag
         self.output_attention = output_attention
@@ -96,7 +96,7 @@ class LogSparceAttention(nn.Module):
 
 class ProbAttention(nn.Module):
     def __init__(self, mask_flag=True, factor=5, scale=None, attention_dropout=0.1, output_attention=False):
-        super(ProbAttention, self).__init__()
+        super().__init__()
         self.factor = factor
         self.scale = scale
         self.mask_flag = mask_flag
@@ -165,12 +165,12 @@ class ProbAttention(nn.Module):
         values = values.transpose(2,1)
 
         U_part = self.factor * np.ceil(np.log(L_K)).astype('int').item() # c*ln(L_k)
-        u = self.factor * np.ceil(np.log(L_Q)).astype('int').item() # c*ln(L_q) 
+        u = self.factor * np.ceil(np.log(L_Q)).astype('int').item() # c*ln(L_q)
 
         U_part = U_part if U_part<L_K else L_K
         u = u if u<L_Q else L_Q
-        
-        scores_top, index = self._prob_QK(queries, keys, sample_k=U_part, n_top=u) 
+
+        scores_top, index = self._prob_QK(queries, keys, sample_k=U_part, n_top=u)
 
         # add scale factor
         scale = self.scale or 1./sqrt(D)
@@ -180,14 +180,14 @@ class ProbAttention(nn.Module):
         context = self._get_initial_context(values, L_Q)
         # update the context with selected top_k queries
         context, attn = self._update_context(context, values, scores_top, index, L_Q, attn_mask)
-        
+
         return context.transpose(2,1).contiguous(), attn
 
 
 class AttentionLayer(nn.Module):
     def __init__(self, attention, d_model, n_heads,
                  d_keys=None, d_values=None, mix=False):
-        super(AttentionLayer, self).__init__()
+        super().__init__()
 
         d_keys = d_keys or (d_model//n_heads)
         d_values = d_values or (d_model//n_heads)

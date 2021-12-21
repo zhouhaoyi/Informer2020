@@ -1,5 +1,6 @@
 import torch
 
+
 class TriangularCausalMask():
     def __init__(self, B, L, device="cpu"):
         mask_shape = [B, 1, L, L]
@@ -18,7 +19,7 @@ class ProbMask():
                              torch.arange(H)[None, :, None],
                              index, :].to(device)
         self._mask = indicator.view(scores.shape).to(device)
-    
+
     @property
     def mask(self):
         return self._mask

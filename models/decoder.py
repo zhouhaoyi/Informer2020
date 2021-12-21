@@ -2,10 +2,11 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 
+
 class DecoderLayer(nn.Module):
     def __init__(self, self_attention, cross_attention, d_model, d_ff=None,
                  dropout=0.1, activation="relu", DCSP=False):
-        super(DecoderLayer, self).__init__()
+        super().__init__()
         d_ff = d_ff or 4*d_model
         self.self_attention = self_attention
         self.cross_attention = cross_attention
@@ -54,7 +55,7 @@ class DecoderLayer(nn.Module):
 
 class Decoder(nn.Module):
     def __init__(self, layers, norm_layer=None):
-        super(Decoder, self).__init__()
+        super().__init__()
         self.layers = nn.ModuleList(layers)
         self.norm = norm_layer
 

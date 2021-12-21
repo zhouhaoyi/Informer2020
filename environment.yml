@@ -3,10 +3,14 @@ channels:
   - conda-forge
   - defaults
 dependencies:
-  - python=3.8
+  - python=3.8.12
   - pip
   - matplotlib
   - numpy
   - pandas
   - scikit-learn
-  - pytorch==1.8.0
+  - pytorch
+  - torchmetrics
+  - pytorch-lightning
+  - python-dotenv
+  - pre-commit

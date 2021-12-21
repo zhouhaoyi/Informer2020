@@ -2,11 +2,13 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 
-from utils.masking import TriangularCausalMask, ProbMask
-from models.encoder import Encoder, EncoderLayer, ConvLayer, EncoderStack, FocusLayer
+from models.attn import (AttentionLayer, FullAttention,
+                         LogSparceAttention, ProbAttention)
 from models.decoder import Decoder, DecoderLayer
-from models.attn import FullAttention, ProbAttention, LogSparceAttention, AttentionLayer
 from models.embed import DataEmbedding
+from models.encoder import (ConvLayer, Encoder, EncoderLayer,
+                            EncoderStack, FocusLayer)
+from utils.masking import ProbMask, TriangularCausalMask
 
 
 class Informer(nn.Module):
@@ -15,7 +17,7 @@ class Informer(nn.Module):
                  dropout=0.0, attn='prob', embed='fixed', freq='h', activation='gelu',
                  output_attention=False, distil=True, mix=True, CSP=False, dilated=False, passthrough=False,
                  device=torch.device('cuda:0')):
-        super(Informer, self).__init__()
+        super().__init__()
         self.pred_len = pred_len
         self.attn = attn
         self.output_attention = output_attention
@@ -110,7 +112,7 @@ class InformerStack(nn.Module):
                  dropout=0.0, attn='prob', embed='fixed', freq='h', activation='gelu',
                  output_attention=False, distil=True, mix=True, CSP=False, dilated=False, passthrough=False,
                  device=torch.device('cuda:0')):
-        super(InformerStack, self).__init__()
+        super().__init__()
         self.pred_len = pred_len
         self.attn = attn
         self.output_attention = output_attention

@@ -5,7 +5,7 @@ import torch.nn.functional as F
 
 class ConvLayer(nn.Module):
     def __init__(self, c_in, d):
-        super(ConvLayer, self).__init__()
+        super().__init__()
         # GD not sure if this section is correct
         # padding = 1 if torch.__version__>='1.5.0' else 2
         # self.downConv = nn.Conv1d(in_channels=c_in,
@@ -88,7 +88,7 @@ class ConvLayer(nn.Module):
 
 class EncoderLayer(nn.Module):
     def __init__(self, attention, d_model, d_ff=None, dropout=0.1, activation="relu", ECSP=False):
-        super(EncoderLayer, self).__init__()
+        super().__init__()
         d_ff = d_ff or 4 * d_model
         self.attention = attention
         self.conv1 = nn.Conv1d(in_channels=d_model, out_channels=d_ff, kernel_size=1)
@@ -138,7 +138,7 @@ class EncoderLayer(nn.Module):
 class FocusLayer(nn.Module):
     # Focus l information into d-space
     def __init__(self, c1, c2, k=1):
-        super(FocusLayer, self).__init__()
+        super().__init__()
         # self.conv = nn.Conv1d(in_channels=c1*2, out_channels=c2, kernel_size=1)
 
     def forward(self, x):  # x(b,d,l) -> y(b,2d,l/2)
@@ -147,7 +147,7 @@ class FocusLayer(nn.Module):
 
 class Encoder(nn.Module):
     def __init__(self, attn_layers, conv_layers=None, norm_layer=None, Focus_layer=None, Passthrough_layer=None):
-        super(Encoder, self).__init__()
+        super().__init__()
         self.passnum = len(attn_layers)
         self.attn_layers = nn.ModuleList(attn_layers)
         self.conv_layers = nn.ModuleList(conv_layers) if conv_layers is not None else None
@@ -203,7 +203,7 @@ class Encoder(nn.Module):
 
 class EncoderStack(nn.Module):
     def __init__(self, encoders, inp_lens):
-        super(EncoderStack, self).__init__()
+        super().__init__()
         self.encoders = nn.ModuleList(encoders)
         self.inp_lens = inp_lens
 
