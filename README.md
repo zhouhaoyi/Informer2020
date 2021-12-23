@@ -40,7 +40,7 @@ It replaces canonical convolution to connect self-attention blocks. It helps Tra
 ## Passthrough Mechanism
 It concatenates feature maps of different scales of self-attention blocks, thus getting more fine-grained information. Alike to feature pyramids commonly used in CNN and image processing, it expands feature maps leading to better forecasting performance of Transformer model. [1][2]
 
-## Enviroment 
+## Enviroment
 use the conda env found in the environment.yml
 ```bash
 conda create -f environment.yml
@@ -223,3 +223,4 @@ At the same time, thank you all for your attention to this work! [![Hits](https:
 
 [4]https://github.com/AIStream-Peelout/flow-forecast
 
+test
