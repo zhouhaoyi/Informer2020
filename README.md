@@ -44,7 +44,7 @@ pip install -r requirements.txt
 
 ## Data
 
-The ETT dataset used in the paper can be download in the repo [ETDataset](https://github.com/zhouhaoyi/ETDataset).
+The ETT dataset used in the paper can be downloaded in the repo [ETDataset](https://github.com/zhouhaoyi/ETDataset).
 The required data files should be put into `data/ETT/` folder. A demo slice of the ETT data is illustrated in the following figure. Note that the input of each dataset is zero-mean normalized in this implementation.
 
 <p align="center">
@@ -53,7 +53,7 @@ The required data files should be put into `data/ETT/` folder. A demo slice of t
 <b>Figure 3.</b> An example of the ETT data.
 </p>
 
-The ECL data and Weather data can be download here.
+The ECL data and Weather data can be downloaded here.
 - [Google Drive](https://drive.google.com/drive/folders/1ohGYWWohJlOlb2gsGTeEq3Wii2egnEPR?usp=sharing)
 - [BaiduPan](https://pan.baidu.com/s/1wyaGUisUICYHnfkZzWCwyA), password: 6gan 
 
@@ -69,7 +69,7 @@ for file in `ls scripts`; do make run_module module="bash scripts/$script"; done
 ```
 
 ## Usage
-<span id="colablink">Colab Examples:</span> We provide google colabs to help reproducing and customing our repo, which includes `experiments(train and test)`, `prediction`, `visualization` and `custom data`.
+<span id="colablink">Colab Examples:</span> We provide google colabs to help reproduce and customize our repo, which includes `experiments(train and test)`, `prediction`, `visualization` and `custom data`.
 [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/drive/1_X7O2BkFLvqyCdZzDZvV2MB0aAvYALLC)
 
 Commands for training and testing the model with *ProbSparse* self-attention on Dataset ETTh1, ETTh2 and ETTm1 respectively:
@@ -205,7 +205,7 @@ If you find this repository useful in your research, please consider citing the 
 ## Contact
 If you have any questions, feel free to contact Haoyi Zhou through Email (zhouhaoyi1991@gmail.com) or Github issues. Pull requests are highly welcomed!
 
-## Acknowlegements
+## Acknowledgments
 Thanks for the computing infrastructure provided by Beijing Advanced Innovation Center for Big Data and Brain Computing ([BDBC](http://bdbc.buaa.edu.cn/)).
 At the same time, thank you all for your attention to this work! [![Hits](https://hits.seeyoufarm.com/api/count/incr/badge.svg?url=https%3A%2F%2Fgithub.com%2Fzhouhaoyi%2FInformer2020&count_bg=%2379C83D&title_bg=%23555555&icon=&icon_color=%23E7E7E7&title=Hits+Count&edge_flat=false)](https://hits.seeyoufarm.com)
 [![Stargazers repo roster for @zhouhaoyi/Informer2020](https://reporoster.com/stars/zhouhaoyi/Informer2020)](https://github.com/zhouhaoyi/Informer2020/stargazers)
