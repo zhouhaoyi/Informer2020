@@ -54,8 +54,8 @@ The required data files should be put into `data/ETT/` folder. A demo slice of t
 </p>
 
 The ECL data and Weather data can be downloaded here.
-- [Google Drive](https://drive.google.com/drive/folders/1ohGYWWohJlOlb2gsGTeEq3Wii2egnEPR?usp=sharing)
-- [BaiduPan](https://pan.baidu.com/s/1wyaGUisUICYHnfkZzWCwyA), password: 6gan 
+- [Google Drive](https://drive.google.com/drive/folders/16MeX3e5WRjwdl9JPVrMzoDanfaY6vXYL?usp=sharing)
+- [BaiduPan](https://pan.baidu.com/s/1tVs6yniQxcaDSAb7j-22QQ), password: ba0q 
 
 ## Reproducibility
 
