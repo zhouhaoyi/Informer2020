@@ -7,6 +7,10 @@
 This is the origin Pytorch implementation of Informer in the following paper: 
 [Informer: Beyond Efficient Transformer for Long Sequence Time-Series Forecasting](https://arxiv.org/abs/2012.07436). Special thanks to `Jieqi Peng`@[cookieminions](https://github.com/cookieminions) for building this repo.
 
+:triangular_flag_on_post:**News**(Mar 27, 2023): We will release Informer V2 soon.
+
+:triangular_flag_on_post:**News**(Feb 28, 2023): The Informer's [extension paper](https://www.sciencedirect.com/science/article/pii/S0004370223000322) is online on AIJ.
+
 :triangular_flag_on_post:**News**(Mar 25, 2021): We update all experiment [results](#resultslink) with hyperparameter settings.
 
 :triangular_flag_on_post:**News**(Feb 22, 2021): We provide [Colab Examples](#colablink) for friendly usage.
@@ -181,8 +185,24 @@ If you run into a problem like `RuntimeError: The size of tensor a (98) must mat
 
 
 ## <span id="citelink">Citation</span>
-If you find this repository useful in your research, please consider citing the following paper:
+If you find this repository useful in your research, please consider citing the following papers:
 
+```
+@article{haoyietal-informerEx-2023,
+  author    = {Haoyi Zhou and
+               Jianxin Li and
+               Shanghang Zhang and
+               Shuai Zhang and
+               Mengyi Yan and
+               Hui Xiong},
+  title     = {Expanding the prediction capacity in long sequence time-series forecasting},
+  journal   = {Artificial Intelligence},
+  volume    = {318},
+  pages     = {103886},
+  issn      = {0004-3702},
+  year      = {2023},
+}
+```
 ```
 @inproceedings{haoyietal-informer-2021,
   author    = {Haoyi Zhou and
