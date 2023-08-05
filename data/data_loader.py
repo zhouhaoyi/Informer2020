@@ -233,8 +233,8 @@ class Dataset_Custom(Dataset):
         num_train = int(len(df_raw)*0.7)
         num_test = int(len(df_raw)*0.2)
         num_vali = len(df_raw) - num_train - num_test
-        border1s = [0, num_train-self.seq_len, len(df_raw)-num_test-self.seq_len]
-        border2s = [num_train, num_train+num_vali, len(df_raw)]
+        border1s = [0, num_train-self.seq_len, len(df_raw)-num_test-self.seq_len]  # border1s 三个起始点
+        border2s = [num_train, num_train+num_vali, len(df_raw)]                    # border2s trois point final
         border1 = border1s[self.set_type]
         border2 = border2s[self.set_type]
         
