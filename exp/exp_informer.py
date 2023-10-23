@@ -50,7 +50,8 @@ class Exp_Informer(Exp_Basic):
                 self.args.output_attention,
                 self.args.distil,
                 self.args.mix,
-                self.device
+                self.device,
+                self.args.is_time_id,
             ).float()
         
         if self.args.use_multi_gpu and self.args.use_gpu:
@@ -82,6 +83,7 @@ class Exp_Informer(Exp_Basic):
             shuffle_flag = True; drop_last = True; batch_size = args.batch_size; freq=args.freq
         data_set = Data(
             root_path=args.root_path,
+            is_time_id=args.is_time_id,
             data_path=args.data_path,
             flag=flag,
             size=[args.seq_len, args.label_len, args.pred_len],
