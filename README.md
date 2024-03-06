@@ -69,7 +69,7 @@ To easily reproduce the results you can follow the next steps:
 3. Run each script in `scripts/` using `make run_module module="bash ETTh1.sh"` for each script.
 4. Alternatively, run all the scripts at once:
 ```
-for file in `ls scripts`; do make run_module module="bash scripts/$script"; done
+for file in `ls scripts`; do make run_module module="bash scripts/$file"; done
 ```
 
 ## Usage
