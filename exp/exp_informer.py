@@ -266,7 +266,7 @@ class Exp_Informer(Exp_Basic):
             preds.append(pred.detach().cpu().numpy())
 
         preds = np.array(preds)
-        preds = preds.reshape(-1, preds.shape[-2], preds.shape[-1])
+        #preds = preds.reshape(-1, preds.shape[-2], preds.shape[-1])
         
         # result save
         folder_path = './results/' + setting +'/'
