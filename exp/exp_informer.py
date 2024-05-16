@@ -21,6 +21,13 @@ warnings.filterwarnings('ignore')
 class Exp_Informer(Exp_Basic):
     def __init__(self, args):
         super(Exp_Informer, self).__init__(args)
+        self.train_losses_ = []
+        self.val_loses_ = []
+        self.mae_ = []
+        self.mse_ = []
+        self.rmse_ = []
+        self.mape_ = []
+        self.mspe_ = []
     
     def _build_model(self):
         model_dict = {
@@ -123,6 +130,10 @@ class Exp_Informer(Exp_Basic):
         return total_loss
 
     def train(self, setting):
+        #train_losses_ = []
+        #val_loses_ = []
+        #test_loses__data = []
+        
         train_data, train_loader = self._get_data(flag = 'train')
         vali_data, vali_loader = self._get_data(flag = 'val')
         test_data, test_loader = self._get_data(flag = 'test')
@@ -177,6 +188,9 @@ class Exp_Informer(Exp_Basic):
             train_loss = np.average(train_loss)
             vali_loss = self.vali(vali_data, vali_loader, criterion)
             test_loss = self.vali(test_data, test_loader, criterion)
+            self.train_losses_.append(train_loss)
+            self.val_loses_.append(vali_loss)
+            #test_loses__data.append(test_loss)
 
             print("Epoch: {0}, Steps: {1} | Train Loss: {2:.7f} Vali Loss: {3:.7f} Test Loss: {4:.7f}".format(
                 epoch + 1, train_steps, train_loss, vali_loss, test_loss))
@@ -199,12 +213,20 @@ class Exp_Informer(Exp_Basic):
         
         preds = []
         trues = []
-        
+
+
         for i, (batch_x,batch_y,batch_x_mark,batch_y_mark) in enumerate(test_loader):
             pred, true = self._process_one_batch(
                 test_data, batch_x, batch_y, batch_x_mark, batch_y_mark)
             preds.append(pred.detach().cpu().numpy())
             trues.append(true.detach().cpu().numpy())
+            mae, mse, rmse, mape, mspe = metric(pred.detach().cpu().numpy(), true.detach().cpu().numpy())
+            self.mae_.append(mae)
+            self.mse_.append(mse)
+            self.rmse_.append(rmse)
+            self.mape_.append(mape)
+            self.mspe_.append(mspe)
+
 
         preds = np.array(preds)
         trues = np.array(trues)
@@ -220,7 +242,6 @@ class Exp_Informer(Exp_Basic):
 
         mae, mse, rmse, mape, mspe = metric(preds, trues)
         print('mse:{}, mae:{}'.format(mse, mae))
-
         np.save(folder_path+'metrics.npy', np.array([mae, mse, rmse, mape, mspe]))
         np.save(folder_path+'pred.npy', preds)
         np.save(folder_path+'true.npy', trues)
