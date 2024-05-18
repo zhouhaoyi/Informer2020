@@ -16,7 +16,7 @@ warnings.filterwarnings('ignore')
 class Dataset_Custom(Dataset):
     def __init__(self, root_path, kind_of_scaler = 'MinMax', flag='train', size=None, 
                  features='MS', data_path='data.csv', 
-                 target='Close', scale=True, inverse=False, timeenc=0, freq='b', cols=None):
+                 target='Close', scale=False, inverse=False, timeenc=0, freq='b', cols=None):
         # size [seq_len, label_len, pred_len]
         # info
         if size == None:
