@@ -14,9 +14,9 @@ import warnings
 warnings.filterwarnings('ignore')
 
 class Dataset_Custom(Dataset):
-    def __init__(self, root_path, kind_of_scaler = 'MinMax', flag='train', size=None, 
-                 features='MS', data_path='data.csv', scale_with_a_copy_of_target = False,
-                 target='Close', scale=False, inverse=False, timeenc=0, freq='b', cols=None):
+    def __init__(self, root_path, kind_of_scaler = 'MinMax', flag='train', size=None, take_data_instead_of_reading = False, direct_data = None
+                 features='MS', data_path='data.csv', scale_with_a_copy_of_target = False, target_data = None,
+                 target='Close', scale=False, inverse=False, timeenc=0, freq='b', cols=None , dtype_ = None):
         # size [seq_len, label_len, pred_len]
         # info
         if size == None:
@@ -31,17 +31,25 @@ class Dataset_Custom(Dataset):
         assert flag in ['train', 'test', 'val']
         type_map = {'train':0, 'val':1, 'test':2}
         self.set_type = type_map[flag]
-        self.scale_with_a_copy_of_target = scale_with_a_copy_of_target
         self.features = features
-        self.target = target
-        self.scale = scale
-        self.inverse = inverse
+        
         self.timeenc = timeenc
         self.freq = freq
+        
+        self.scale = scale
+        self.kind_of_scaler = kind_of_scaler
+        self.inverse = inverse
+        self.dtype_ = dtype_
+        self.scale_with_a_copy_of_target = scale_with_a_copy_of_target
         self.cols=cols
+        self.target = target
+        self.target_data = target_data
+        
         self.root_path = root_path
         self.data_path = data_path
-        self.kind_of_scaler = kind_of_scaler
+        self.direct_data = direct_data
+        self.take_data_instead_of_reading = take_data_instead_of_reading
+        
         self.__read_data__()
 
     def _scale_data_(self, X):
@@ -70,6 +78,23 @@ columns_scalled = np.concatenate(temp_columns, axis = 1)
         
 
     def __read_data__(self):
+        if self.take_data_instead_of_reading :
+            if direct_data is not None and target_data is None:
+                warrnings.warn(" It Assume that you have the Target Here ! ")
+            elif direct_data is not None and target_data is not None:
+            warrnings.warn(" It Assume that you Prepare Your Target and passed it to target_data ! ")
+                direct_data = self.direct_data.copy()
+                target_data = self.target_data.copy()
+                df_raw = pd.concat([direct_data, target_data], axis = 1)
+            else:
+                try:
+                    df_raw = pd.read_csv(os.path.join(self.root_path,
+                                          self.data_path), dtype=self.dtype_)
+                    warrnings.warn(" Passing with No Data Directly Detected . Instead Read from path ! {os.path.join(self.root_path,self.data_path)}")
+                    warrnings.warn("     direct_data should have a DataFrame to it Can Work with take_data_instead_of_reading == True ! ! ")
+                except:
+                    print(" direct_data should have a DataFrame to it Can Work with take_data_instead_of_reading == True ! ")
+                    raise
         df_raw = pd.read_csv(os.path.join(self.root_path,
                                           self.data_path), dtype=self.dtype_)
         '''
@@ -78,23 +103,23 @@ columns_scalled = np.concatenate(temp_columns, axis = 1)
         # cols = list(df_raw.columns); 
         if self.cols:
             cols=self.cols.copy()
-            if self.target in cols:
-              cols.remove(self.target)
-            else:
-              pass
         else:
             cols = list(df_raw.columns)
             if self.target in cols :
               cols.remove(self.target)
             else:
-              pass
-            cols.remove('date')
+                if self.target_data is not None :
+                    df_raw[self.target] =  self.target_data.copy()
+                else:
+                    print(" if you do not have your target in your main data you should pass it manually to target_data ! ")
+                    raise
+        
+        cols.remove('date')
         
         df_raw = df_raw[['date']+cols+[self.target]]
 
         num_train = int(len(df_raw)*0.8)
         num_test = int(len(df_raw)*0.2)
-        #num_vali = len(df_raw) - num_train - num_test
         border1s = [0, num_train-self.seq_len, len(df_raw)-num_test-self.seq_len]
         border2s = [num_train, num_train, len(df_raw)]
         border1 = border1s[self.set_type]
