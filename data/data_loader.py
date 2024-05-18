@@ -41,7 +41,7 @@ class Dataset_Custom(Dataset):
         self.inverse = inverse
         self.dtype_ = dtype_
         self.scale_with_a_copy_of_target = scale_with_a_copy_of_target
-        self.cols=cols
+        self.cols= cols
         self.target = target
         self.target_data = target_data
         
@@ -52,7 +52,7 @@ class Dataset_Custom(Dataset):
         
         self.__read_data__()
 
-    def _scale_data_(self, X):
+    def _scale_data_(self, X, range_of_fit : tuple = None):
         if self.kind_of_scaler == 'MinMax': 
             scaler = MinMaxScaler()
         elif self.kind_of_scaler == 'Standard':
@@ -61,60 +61,58 @@ class Dataset_Custom(Dataset):
             warrnings.warn("the scale job was failed! check the  self.scale  and  self.kind_of_scaler  and make sure the right values of them ! ")
             return X
         # X should be One of the cols 
+        range_of_fit = range_of_fit if range_of_fit is not None else ( (X_reshaped.shape[0])//2, X_reshaped.shape[0] )
         X_reshaped = X.reshape((-1, 1))
-        X_scaler = scaler.fit(X_reshaped[(X_reshaped.shape[0])//2:,])
+        X_scaler = scaler.fit(X_reshaped[range_of_fit[0]:range_of_fit[1],])
         scalled_X = X_scaler.transform(X_reshaped)
         if self.inverse:
             return scalled_X, X_scaler
         else:
             return scalled_X
-
-columns_scalled = np.concatenate(temp_columns, axis = 1)
         
         
         
 
     def __read_data__(self):
         if self.take_data_instead_of_reading :
-            if direct_data is not None and target_data is None:
-                warrnings.warn(" It Assume that you have the Target Here ! ")
-            elif direct_data is not None and target_data is not None:
-            warrnings.warn(" It Assume that you Prepare Your Target and passed it to target_data ! ")
-                direct_data = self.direct_data.copy()
-                target_data = self.target_data.copy()
-                df_raw = pd.concat([direct_data, target_data], axis = 1)
-            else:
-                try:
-                    df_raw = pd.read_csv(os.path.join(self.root_path,
+            if self.direct_data is not None:
+                    warrnings.warn(" It Assume that you have the Target Here ! ")
+                    df_raw = self.direct_data.copy()
+        try:
+            df_raw = pd.read_csv(os.path.join(self.root_path,
                                           self.data_path), dtype=self.dtype_)
-                    warrnings.warn(" Passing with No Data Directly Detected . Instead Read from path ! {os.path.join(self.root_path,self.data_path)}")
-                    warrnings.warn("     direct_data should have a DataFrame to it Can Work with take_data_instead_of_reading == True ! ! ")
-                except:
-                    print(" direct_data should have a DataFrame to it Can Work with take_data_instead_of_reading == True ! ")
-                    raise
-        df_raw = pd.read_csv(os.path.join(self.root_path,
-                                          self.data_path), dtype=self.dtype_)
+            warrnings.warn(" Passing with No Data Directly Detected . Instead Read from path ! {os.path.join(self.root_path,self.data_path)}")
+            warrnings.warn("     direct_data should have a DataFrame to it Can Work with take_data_instead_of_reading == True ! ! ")
+        except:
+            print(" direct_data should have a DataFrame to it Can Work with take_data_instead_of_reading == True ! ")
+            raise
+        #else:
+        #    if scale_with_a_copy_of_target:
+        #        if self.scale == False:
+        #            df_raw['Copy'] = df_raw[self.target]
+        #            df_raw[self.target] = self.target_data.copy()
+        #    else:                
         '''
         df_raw.columns: ['date', ...(other features), target feature]
         '''
         # cols = list(df_raw.columns); 
         if self.cols:
-            cols=self.cols.copy()
+            cols = self.cols.copy()
         else:
             cols = list(df_raw.columns)
-            if self.target in cols :
-              cols.remove(self.target)
+            self.cols = cols.copy()
+        if self.target in cols :
+            cols.remove(self.target)
+        else:
+            if self.target_data is not None :
+                df_raw[self.target] =  self.target_data.copy()
             else:
-                if self.target_data is not None :
-                    df_raw[self.target] =  self.target_data.copy()
-                else:
-                    print(" if you do not have your target in your main data you should pass it manually to target_data ! ")
-                    raise
+                print(" if you do not have your target in your main data you should pass it manually to target_data ! ")
+                raise
         
         cols.remove('date')
-        
         df_raw = df_raw[['date']+cols+[self.target]]
-
+        
         num_train = int(len(df_raw)*0.8)
         num_test = int(len(df_raw)*0.2)
         border1s = [0, num_train-self.seq_len, len(df_raw)-num_test-self.seq_len]
@@ -122,22 +120,51 @@ columns_scalled = np.concatenate(temp_columns, axis = 1)
         border1 = border1s[self.set_type]
         border2 = border2s[self.set_type]
         
+        
+        if self.scale_with_a_copy_of_target:
+            if self.target_data:
+                data_y = self.target_data.copy()
+            else:
+                data_y = df_raw[[self.target]]
+       
         if self.features=='M' or self.features=='MS':
             cols_data = df_raw.columns[1:]
             df_data = df_raw[cols_data]
         elif self.features=='S':
             df_data = df_raw[[self.target]]
 
+        
         if self.scale:
-            train_data = df_data[border1s[0]:border2s[0]]
-            self.scaler.fit(train_data.values)
-            data = self.scaler.transform(df_data.values)
+            if self.features=='M' or self.features=='MS':
+                columns_scaled = []
+                scalers = []
+                for any_ in df_data.columns:
+                    temp_col = df_data[[any_]].values
+                    if self.inverse:
+                        col_scaled, scaler = self._scale_data_(temp_col, (border1s[0],border2s[0]))
+                        scalers.append(scaler)
+                    else:
+                        col_scaled = self._scale_data_(temp_col, (border1s[0],border2s[0]))
+                    columns_scalled.append(col_scaled)
+                data = np.concatenate(columns_scaled, axis = 1)
+            else:
+                col_scale = df_data.values
+                if self.inverse:
+                    scaled_data, scaler = self._scale_data_(col_scale, (border1s[0],border2s[0]))
+                else:
+                    scaled_data = self._scale_data_(col_scale, (border1s[0],border2s[0]))
+            data = scaled_data
         else:
             data = df_data.values
-            
+        
+        self.data_x = data[border1:border2]
+        if self.inverse:
+            self.data_y = scaler.inverse_transform(data_y[border1:border2])
+        else:
+            self.data_y = data_y[border1:border2]
+
         df_stamp = df_raw[['date']][border1:border2]
         df_stamp['date'] = pd.to_datetime(df_stamp.date)
-        
         if self.timeenc == 0:
             df_stamp['month'] = df_stamp.date.apply(lambda row: row.month, 1)
             df_stamp['day'] = df_stamp.date.apply(lambda row: row.day, 1)
@@ -146,12 +173,6 @@ columns_scalled = np.concatenate(temp_columns, axis = 1)
             data_stamp = df_stamp.drop(['date'], axis=1).values
         elif self.timeenc == 1:
             data_stamp = time_features(df_stamp, timeenc=self.timeenc, freq=self.freq)
-
-        self.data_x = data[border1:border2]
-        if self.inverse:
-            self.data_y = df_data.values[border1:border2]
-        else:
-            self.data_y = data[border1:border2]
         self.data_stamp = data_stamp
     
     def __getitem__(self, index):
