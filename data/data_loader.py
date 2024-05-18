@@ -15,7 +15,7 @@ warnings.filterwarnings('ignore')
 
 class Dataset_Custom(Dataset):
     def __init__(self, root_path, kind_of_scaler = 'MinMax', flag='train', size=None, 
-                 features='MS', data_path='data.csv', 
+                 features='MS', data_path='data.csv', scale_with_a_copy_of_target = False,
                  target='Close', scale=False, inverse=False, timeenc=0, freq='b', cols=None):
         # size [seq_len, label_len, pred_len]
         # info
@@ -31,7 +31,7 @@ class Dataset_Custom(Dataset):
         assert flag in ['train', 'test', 'val']
         type_map = {'train':0, 'val':1, 'test':2}
         self.set_type = type_map[flag]
-        
+        self.scale_with_a_copy_of_target = scale_with_a_copy_of_target
         self.features = features
         self.target = target
         self.scale = scale
@@ -44,16 +44,34 @@ class Dataset_Custom(Dataset):
         self.kind_of_scaler = kind_of_scaler
         self.__read_data__()
 
-    def __read_data__(self):
-        if self.kind_of_scaler == 'MinMax':
-            self.scaler = MinMaxScaler()
-        elif self.kind_of_scaler == 'Standard':
-            self.scaler = StandardScaler()
+    def _scale_data_(self, X):
+        if self.kind_of_scaler == 'MinMax' and self.scale : 
+            scaler = MinMaxScaler()
+        elif self.kind_of_scaler == 'Standard' and self.scale:
+            scaler = StandardScaler()
+        elif self.scale == 'True':
+            warrnings.warn("the scale job was failed! check the  self.scale  and  self.kind_of_scaler  and make sure the right values of them ! ")
+            return X
+        else
+            self.scale = False 
+            return X
+        # X should be One of the cols 
+        X_reshaped = X.reshape((-1, 1))
+        X_scaler = scaler.fit(X_reshaped[(X_reshaped.shape[0])//2:,])
+        scalled_X = X_scaler.transform(X_reshaped)
+        if self.inverse:
+            return scalled_X, X_scaler
         else:
-            self.scale = False
+            return scalled_X
+
+columns_scalled = np.concatenate(temp_columns, axis = 1)
         
+        
+        
+
+    def __read_data__(self):
         df_raw = pd.read_csv(os.path.join(self.root_path,
-                                          self.data_path))
+                                          self.data_path), dtype=self.dtype_)
         '''
         df_raw.columns: ['date', ...(other features), target feature]
         '''
@@ -75,10 +93,10 @@ class Dataset_Custom(Dataset):
         df_raw = df_raw[['date']+cols+[self.target]]
 
         num_train = int(len(df_raw)*0.8)
-        num_test = int(len(df_raw)*0.15)
-        num_vali = len(df_raw) - num_train - num_test
+        num_test = int(len(df_raw)*0.2)
+        #num_vali = len(df_raw) - num_train - num_test
         border1s = [0, num_train-self.seq_len, len(df_raw)-num_test-self.seq_len]
-        border2s = [num_train, num_train+num_vali, len(df_raw)]
+        border2s = [num_train, num_train, len(df_raw)]
         border1 = border1s[self.set_type]
         border2 = border2s[self.set_type]
         
