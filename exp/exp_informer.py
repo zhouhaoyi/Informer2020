@@ -4,6 +4,7 @@ from models.model import Informer, InformerStack
 
 from utils.tools import EarlyStopping, adjust_learning_rate
 from utils.metrics import metric
+from utils.criter import WeightedMeanAbsolutePercentageError, SymmetricMeanAbsolutePercentageError, RMSELoss, QuantileLoss, HuberLoss, PinballLoss
 
 import numpy as np
 
@@ -23,11 +24,8 @@ class Exp_Informer(Exp_Basic):
         super(Exp_Informer, self).__init__(args)
         self.train_losses_ = []
         self.val_loses_ = []
-        self.mae_ = []
-        self.mse_ = []
-        self.rmse_ = []
-        self.mape_ = []
-        self.mspe_ = []
+        self.actual_train = []
+        self.predicted_train = []
     
     def _build_model(self):
         model_dict = {
@@ -81,12 +79,22 @@ class Exp_Informer(Exp_Basic):
         timeenc = 0 if args.embed!='timeF' else 1
 
         if flag == 'test':
-            shuffle_flag = False; drop_last = True; batch_size = args.batch_size; freq=args.freq
+            shuffle_flag = args.shuffle_for_test if hasattr(args, 'shuffle_for_test') else False
+            drop_last = True
+            batch_size = args.batch_size
+            freq=args.freq
         elif flag=='pred':
-            shuffle_flag = False; drop_last = False; batch_size = 1; freq=args.detail_freq
+            shuffle_flag = args.shuffle_for_pred if hasattr(args, 'shuffle_for_pred') else False
+            drop_last = False
+            batch_size = 1; 
+            freq=args.detail_freq
             Data = Dataset_Pred
         else:
-            shuffle_flag = True; drop_last = True; batch_size = args.batch_size; freq=args.freq
+            shuffle_flag = args.shuffle_for_train if hasattr(args, 'shuffle_for_train') else True
+            drop_last = True
+            batch_size = args.batch_size
+            freq=args.freq
+        
         data_set = Data(
             root_path=args.root_path,
             data_path=args.data_path,
@@ -103,7 +111,7 @@ class Exp_Informer(Exp_Basic):
         data_loader = DataLoader(
             data_set,
             batch_size=batch_size,
-            shuffle=shuffle_flag,
+            shuffle= shuffle_flag,
             num_workers=args.num_workers,
             drop_last=drop_last)
 
@@ -137,10 +145,31 @@ class Exp_Informer(Exp_Basic):
         return model_optim
     
     def _select_criterion(self):
-        criterion =  nn.MSELoss()
+        if self.args.criter == 'WMAPE':
+            criterion = WeightedMeanAbsolutePercentageError()
+        elif self.args.criter == 'SMAPE':
+            criterion = SymmetricMeanAbsolutePercentageError()
+        elif self.args.criter == 'MAE':
+            criterion = nn.L1Loss()
+        elif self.args.criter == 'RMSE':
+            criterion = RMSELoss()
+        elif self.args.criter == 'QuantileLoss':
+            criterion = QuantileLoss()
+        elif self.args.criter == 'HuberLoss':
+            criterion = HuberLoss()
+        elif self.args.criter == 'PinballLoss':
+            criterion = PinballLoss()
+        else:
+            criterion = nn.MSELoss()  # Default to Mean Squared Error if no specific criterion is specified
         return criterion
 
+
+
     def vali(self, vali_data, vali_loader, criterion):
+        if self.args.use_validate == False:
+            return False
+        else:
+            pass
         self.model.eval()
         total_loss = []
         for i, (batch_x,batch_y,batch_x_mark,batch_y_mark) in enumerate(vali_loader):
@@ -158,7 +187,7 @@ class Exp_Informer(Exp_Basic):
         #test_loses__data = []
         
         train_data, train_loader = self._get_data(flag = 'train')
-        vali_data, vali_loader = self._get_data(flag = 'val')
+        #vali_data, vali_loader = self._get_data(flag = 'val')
         test_data, test_loader = self._get_data(flag = 'test')
 
         path = os.path.join(self.args.checkpoints, setting)
@@ -209,7 +238,7 @@ class Exp_Informer(Exp_Basic):
 
             print("Epoch: {} cost time: {}".format(epoch+1, time.time()-epoch_time))
             train_loss = np.average(train_loss)
-            vali_loss = self.vali(vali_data, vali_loader, criterion)
+            #vali_loss = self.vali(vali_data, vali_loader, criterion)
             test_loss = self.vali(test_data, test_loader, criterion)
             self.train_losses_.append(train_loss)
             self.val_loses_.append(vali_loss)
