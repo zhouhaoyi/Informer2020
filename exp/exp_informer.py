@@ -23,7 +23,7 @@ class Exp_Informer(Exp_Basic):
     def __init__(self, args):
         super(Exp_Informer, self).__init__(args)
         self.train_losses_ = []
-        self.val_loses_ = []
+        #self.val_loses_ = []
         self.actual_train = []
         self.predicted_train = []
     
@@ -102,10 +102,14 @@ class Exp_Informer(Exp_Basic):
             size=[args.seq_len, args.label_len, args.pred_len],
             features=args.features,
             target=args.target,
+            scale = args.scale,
             inverse=args.inverse,
             timeenc=timeenc,
             freq=freq,
-            cols=args.cols
+            dtype= args.dtype_
+            cols=args.cols,
+            kind_of_scaler = args.kind_of_scaler,
+            scale_with_a_copy_of_target = args.scale_with_a_copy_of_target
         )
         print(flag, len(data_set))
         data_loader = DataLoader(
@@ -145,31 +149,27 @@ class Exp_Informer(Exp_Basic):
         return model_optim
     
     def _select_criterion(self):
-        if self.args.criter == 'WMAPE':
+        if self.args.criter.lower() == 'wmape':
             criterion = WeightedMeanAbsolutePercentageError()
-        elif self.args.criter == 'SMAPE':
+        elif self.args.criter.lower() == 'smape':
             criterion = SymmetricMeanAbsolutePercentageError()
-        elif self.args.criter == 'MAE':
+        elif self.args.criter.lower() == 'mae':
             criterion = nn.L1Loss()
-        elif self.args.criter == 'RMSE':
+        elif self.args.criter.lower() == 'rmse':
             criterion = RMSELoss()
-        elif self.args.criter == 'QuantileLoss':
+        elif self.args.criter.lower() == 'quantileloss':
             criterion = QuantileLoss()
-        elif self.args.criter == 'HuberLoss':
+        elif self.args.criter.lower() == 'huberloss':
             criterion = HuberLoss()
-        elif self.args.criter == 'PinballLoss':
+        elif self.args.criter.lower() == 'pinballloss':
             criterion = PinballLoss()
         else:
-            criterion = nn.MSELoss()  # Default to Mean Squared Error if no specific criterion is specified
+            criterion = nn.MSELoss()  # Default to Mean Squared Error
         return criterion
 
 
 
     def vali(self, vali_data, vali_loader, criterion):
-        if self.args.use_validate == False:
-            return False
-        else:
-            pass
         self.model.eval()
         total_loss = []
         for i, (batch_x,batch_y,batch_x_mark,batch_y_mark) in enumerate(vali_loader):
@@ -241,12 +241,12 @@ class Exp_Informer(Exp_Basic):
             #vali_loss = self.vali(vali_data, vali_loader, criterion)
             test_loss = self.vali(test_data, test_loader, criterion)
             self.train_losses_.append(train_loss)
-            self.val_loses_.append(vali_loss)
-            #test_loses__data.append(test_loss)
+            #self.val_loses_.append(vali_loss)
+            test_loses__data.append(test_loss)
 
-            print("Epoch: {0}, Steps: {1} | Train Loss: {2:.7f} Vali Loss: {3:.7f} Test Loss: {4:.7f}".format(
-                epoch + 1, train_steps, train_loss, vali_loss, test_loss))
-            early_stopping(vali_loss, self.model, path)
+            print("Epoch: {0}, Steps: {1} | Train Loss: {2:.7f} Test Loss: {4:.7f}".format(
+                epoch + 1, train_steps, train_loss, test_loss))
+            early_stopping(test_loss, self.model, path)
             if early_stopping.early_stop:
                 print("Early stopping")
                 break
@@ -270,8 +270,8 @@ class Exp_Informer(Exp_Basic):
         for i, (batch_x,batch_y,batch_x_mark,batch_y_mark) in enumerate(test_loader):
             pred, true = self._process_one_batch(
                 test_data, batch_x, batch_y, batch_x_mark, batch_y_mark)
-            preds.append(pred.detach().cpu().numpy())
-            trues.append(true.detach().cpu().numpy())
+            preds.append(pred)
+            trues.append(true)
             mae, mse, rmse, mape, mspe = metric(pred.detach().cpu().numpy(), true.detach().cpu().numpy())
             self.mae_.append(mae)
             self.mse_.append(mse)
@@ -280,8 +280,8 @@ class Exp_Informer(Exp_Basic):
             self.mspe_.append(mspe)
 
 
-        preds = np.array(preds)
-        trues = np.array(trues)
+        preds = np.array(preds, dtype = self.args.dtype_)
+        trues = np.array(trues, dtype = self.args.dtype_)
         print('test shape:', preds.shape, trues.shape)
         preds = preds.reshape(-1, preds.shape[-2], preds.shape[-1])
         trues = trues.reshape(-1, trues.shape[-2], trues.shape[-1])
