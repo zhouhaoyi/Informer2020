@@ -110,7 +110,6 @@ class Exp_Informer(Exp_Basic):
         return data_set, data_loader
 
     def _select_optimizer(self):
-        if hasattr(self.args, kind_of_optim) :
         if self.args.kind_of_optim == 'AdamW':
             model_optim = optim.AdamW(self.model.parameters(), lr=self.args.learning_rate)
         elif self.args.kind_of_optim == 'SparseAdam':
