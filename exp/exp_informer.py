@@ -101,15 +101,19 @@ class Exp_Informer(Exp_Basic):
             flag=flag,
             size=[args.seq_len, args.label_len, args.pred_len],
             features=args.features,
-            target=args.target,
-            scale = args.scale,
-            inverse=args.inverse,
+            target=args.target if hasattr(args, 'target'),
+            scale = args.scale if hasattr(args, 'scale'),
+            inverse=args.inverse if hasattr(args, 'inverse'),
             timeenc=timeenc,
             freq=freq,
-            dtype= args.dtype_
-            cols=args.cols,
-            kind_of_scaler = args.kind_of_scaler,
-            scale_with_a_copy_of_target = args.scale_with_a_copy_of_target
+            dtype= args.dtype_ if hasattr(args, 'dtype_'),
+            take_data_instead_of_reading = args.take_data_instead_of_reading if hasattr(args, 'take_data_instead_of_reading'),
+            direct_data = args.direct_data if hasattr(args, 'direct_data'),
+            target_data = args.target_data if hasattr(args, 'target_data'),
+            cols = args.cols if hasattr(args, 'cols'),
+            kind_of_scaler = args.kind_of_scaler if hasattr(args, 'kind_of_scaler') else 'MinMax' ,
+            scale_with_a_copy_of_target = args.scale_with_a_copy_of_target if hasattr(args, 'scale_with_a_copy_of_target')
+            
         )
         print(flag, len(data_set))
         data_loader = DataLoader(
