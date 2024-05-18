@@ -2,7 +2,29 @@
                            Version 2.0, January 2004
                         http://www.apache.org/licenses/
 
-   TERMS AND CONDITIONS FOR USE, REPRODUCTION, AND DISTRIBUTION
+           TERMS AND CONDITIONS FOR USE, REPRODUCTION, AND DISTRIBUTION
+           
+        ############################################################
+       #                                                            #
+      #         THIS IS A REVISED VERSION OF THE ORIGINAL CODE       #
+      #                                                               # 
+      #                          PROVIDED BY                          #
+      #         --->>>> https://github.com/zhouhaoyi <<<<----         #
+      #                                                               #
+      #          AS THE TRUE OWNER OF FUNDAMENTAL OF THIS REPO        #
+      #                                                               #
+      #               ALL RIGHTS ARE RESERVED FOR HIM                 #
+      #                                                               #
+      #       I JUST MADE SOME ESSENTIAL CHANGES AND THAT WAS ALL     #
+      #                                                               #
+      #                                                               #
+      #                    I STRONGLY RECOMMENDED                     #
+      #        TO FIRST USE THE ORIGINAL VERSION OF THIS MODEL        #
+      #                  WHICH CAN BE REACHED HERE:                   #
+      #          https://github.com/zhouhaoyi/Informer2020            #
+      #                  (zhouhaoyi1991@gmail.com)                    #
+       ###############################################################
+
 
    1. Definitions.
 
@@ -186,8 +208,9 @@
       same "printed page" as the copyright notice for easier
       identification within third-party archives.
 
-   Copyright [yyyy] [name of copyright owner]
-
+   Copyright 2021 Haoyi Zhou As OWNER
+   Copyright 2024 Hamed Hajipour As Contributor
+   
    Licensed under the Apache License, Version 2.0 (the "License");
    you may not use this file except in compliance with the License.
    You may obtain a copy of the License at
