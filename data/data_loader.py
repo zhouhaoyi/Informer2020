@@ -4,7 +4,7 @@ import numpy as np
 import pandas as pd
 import torch
 from torch.utils.data import Dataset, DataLoader
-from sklearn.preprocessing import StandardScaler, MinMaxScaler, PowerTransformer, RobustScaler, QuantileTransformer, MaxAbsScaler, 
+from sklearn.preprocessing import StandardScaler, MinMaxScaler, PowerTransformer, RobustScaler, QuantileTransformer, MaxAbsScaler
 #from utils.tools import StandardScaler
 from utils.timefeatures import time_features
 import warnings
