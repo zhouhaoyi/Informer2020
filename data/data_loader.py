@@ -2,302 +2,238 @@
 import os
 import numpy as np
 import pandas as pd
-
 import torch
 from torch.utils.data import Dataset, DataLoader
 from sklearn.preprocessing import MinMaxScaler
-
 from utils.tools import StandardScaler
 from utils.timefeatures import time_features
-
 import warnings
 warnings.filterwarnings('ignore')
 
+
 class Dataset_Custom(Dataset):
-    def __init__(self, root_path, kind_of_scaler = 'MinMax', flag='train', size=None, take_data_instead_of_reading = False, direct_data = None
-                 features='MS', data_path='data.csv', scale_with_a_copy_of_target = False, target_data = None,
-                 target='Close', scale=False, inverse=False, timeenc=0, freq='b', cols=None , dtype_ = None):
-        # size [seq_len, label_len, pred_len]
-        # info
-        if size == None:
-            self.seq_len = 1*5*2
-            self.label_len = 1*1
-            self.pred_len = 1*1
-        else:
-            self.seq_len = size[0]
-            self.label_len = size[1]
-            self.pred_len = size[2]
-        # init
-        assert flag in ['train', 'test', 'pred']
-        type_map = {'train':0, 'pred':1, 'test':2}
-        self.set_type = type_map[flag]
-        self.features = features
-        
-        self.timeenc = timeenc
-        self.freq = freq
-        
-        self.scale = scale
-        self.kind_of_scaler = kind_of_scaler
-        self.inverse = inverse
-        self.dtype_ = dtype_
-        self.scale_with_a_copy_of_target = scale_with_a_copy_of_target
-        self.cols= cols
-        self.target = target
-        self.target_data = target_data
-        
+    def __init__(self, root_path, data_path, flag, size, features, target, scale, inverse, timeenc, freq, dtype, take_data_instead_of_reading, direct_data, target_data, cols, kind_of_scaler, scale_with_a_copy_of_target):
+        super(Dataset_Custom, self).__init__()
+
         self.root_path = root_path
         self.data_path = data_path
-        self.direct_data = direct_data
+        self.flag = flag
+        self.size = size
+        self.features = features
+        self.target = target
+        self.scale = scale
+        self.inverse = inverse
+        self.timeenc = timeenc
+        self.freq = freq
+        self.dtype = dtype
         self.take_data_instead_of_reading = take_data_instead_of_reading
-        
-        self.__read_data__()
+        self.direct_data = direct_data
+        self.target_data = target_data
+        self.cols = cols
+        self.kind_of_scaler = kind_of_scaler
+        self.scale_with_a_copy_of_target = scale_with_a_copy_of_target
 
-    def _scale_data_(self, X, range_of_fit : tuple = None):
-        if self.kind_of_scaler == 'MinMax': 
-            scaler = MinMaxScaler()
+        if self.take_data_instead_of_reading:
+            self.data = self.data_path
+            self.data = np.array(self.data)
+
+            self.origin_data = self.data
+        else:
+            self._read_data()
+        self._gen_data()
+
+    def _read_data(self):
+        data_path = self.root_path + self.data_path + self.flag + '.npy'
+        data = np.load(data_path)
+        self.data = data
+
+    def _gen_data(self):
+        # data process
+        scale_range = (-1, 1) if self.scale else (0, 1)
+
+        # temporal encoding
+        timeenc = np.tile(np.array(range(self.size[0]))[:, None], [1, self.size[1]])
+        timeenc = timeenc / max(timeenc.flatten())
+
+        data = self.data
+
+        if self.features == 'M' or self.features == 'S':
+            # time features
+            if self.timeenc == 1:
+                data_time = np.concatenate([np.sin(2 * np.pi * timeenc), np.cos(2 * np.pi * timeenc)], axis=-1)
+                data = np.concatenate([data, data_time], axis=-1)
+        elif self.features == 'MS':
+            # time features
+            if self.timeenc == 1:
+                data_time = np.concatenate([np.sin(2 * np.pi * timeenc), np.cos(2 * np.pi * timeenc)], axis=-1)
+                data = np.concatenate([data, data_time], axis=-1)
+
+        self.data = data
+
+        # target
+        self.target = self.data[:, :, self.cols.index(self.target)].reshape((-1, self.size[0], 1))
+
+        # features
+        self.features = np.delete(self.data, self.cols.index(self.target), axis=-1)
+
+        # normalize
+        if self.scale:
+            self.origin_target = self.target.copy()
+            self.origin_data = self.data.copy()
+
+            self.target, self.target_scaler = self._scale(self.target)
+            self.features, self.feature_scaler = self._scale(self.features)
+
+        if self.inverse:
+            self.origin_target = self.target.copy()
+            self.origin_data = self.data.copy()
+
+    def _scale(self, data):
+        if self.kind_of_scaler == 'MinMax':
+            scaler = MinMaxScaler(feature_range=self.scale_range)
         elif self.kind_of_scaler == 'Standard':
             scaler = StandardScaler()
+        elif self.kind_of_scaler == 'Robust':
+            scaler = RobustScaler()
+        elif self.kind_of_scaler == 'Quantile':
+            scaler = QuantileTransformer()
+        elif self.kind_of_scaler == 'MaxAbs':
+            scaler = MaxAbsScaler()
+        elif self.kind_of_scaler == 'Power':
+            scaler = PowerTransformer()
         else:
-            warrnings.warn("the scale job was failed! check the  self.scale  and  self.kind_of_scaler  and make sure the right values of them ! ")
-            return X
-        # X should be One of the cols 
-        range_of_fit = range_of_fit if range_of_fit is not None else ( (X_reshaped.shape[0])//2, X_reshaped.shape[0] )
-        X_reshaped = X.reshape((-1, 1))
-        X_scaler = scaler.fit(X_reshaped[range_of_fit[0]:range_of_fit[1],])
-        scalled_X = X_scaler.transform(X_reshaped)
-        if self.inverse:
-            return scalled_X, X_scaler
-        else:
-            return scalled_X
-        
-        
-        
-
-    def __read_data__(self):
-        if self.take_data_instead_of_reading :
-            if self.direct_data is not None:
-                    warrnings.warn(" It Assume that you have the Target Here ! ")
-                    df_raw = self.direct_data.copy()
-        try:
-            df_raw = pd.read_csv(os.path.join(self.root_path,
-                                          self.data_path), dtype=self.dtype_)
-            warrnings.warn(" Passing with No Data Directly Detected . Instead Read from path ! {os.path.join(self.root_path,self.data_path)}")
-            warrnings.warn("     direct_data should have a DataFrame to it Can Work with take_data_instead_of_reading == True ! ! ")
-        except:
-            print(" direct_data should have a DataFrame to it Can Work with take_data_instead_of_reading == True ! ")
-            raise
-        #else:
-        #    if scale_with_a_copy_of_target:
-        #        if self.scale == False:
-        #            df_raw['Copy'] = df_raw[self.target]
-        #            df_raw[self.target] = self.target_data.copy()
-        #    else:                
-        '''
-        df_raw.columns: ['date', ...(other features), target feature]
-        '''
-        # cols = list(df_raw.columns); 
-        if self.cols:
-            cols = self.cols.copy()
-        else:
-            cols = list(df_raw.columns)
-            self.cols = cols.copy()
-        if self.target in cols :
-            cols.remove(self.target)
-        else:
-            if self.target_data is not None :
-                df_raw[self.target] =  self.target_data.copy()
-            else:
-                print(" if you do not have your target in your main data you should pass it manually to target_data ! ")
-                raise
-        
-        cols.remove('date')
-        df_raw = df_raw[['date']+cols+[self.target]]
-        
-        num_train = int(len(df_raw)*0.8)
-        num_test = int(len(df_raw)*0.2)
-        border1s = [0, num_train-self.seq_len, len(df_raw)-num_test-self.seq_len]
-        border2s = [num_train, num_train, len(df_raw)]
-        border1 = border1s[self.set_type]
-        border2 = border2s[self.set_type]
-        
-        
+            scaler = MinMaxScaler(feature_range=self.scale_range)
         if self.scale_with_a_copy_of_target:
-            if self.target_data:
-                data_y = self.target_data.copy()
-            else:
-                data_y = df_raw[[self.target]]
-       
-        if self.features=='M' or self.features=='MS':
-            cols_data = df_raw.columns[1:]
-            df_data = df_raw[cols_data]
-        elif self.features=='S':
-            df_data = df_raw[[self.target]]
-
-        
-        if self.scale:
-            if self.features=='M' or self.features=='MS':
-                columns_scaled = []
-                scalers = []
-                for any_ in df_data.columns:
-                    temp_col = df_data[[any_]].values
-                    if self.inverse:
-                        col_scaled, scaler = self._scale_data_(temp_col, (border1s[0],border2s[0]))
-                        scalers.append(scaler)
-                    else:
-                        col_scaled = self._scale_data_(temp_col, (border1s[0],border2s[0]))
-                    columns_scalled.append(col_scaled)
-                data = np.concatenate(columns_scaled, axis = 1)
-            else:
-                col_scale = df_data.values
-                if self.inverse:
-                    scaled_data, scaler = self._scale_data_(col_scale, (border1s[0],border2s[0]))
-                else:
-                    scaled_data = self._scale_data_(col_scale, (border1s[0],border2s[0]))
-            data = scaled_data
+            data = scaler.fit_transform(data.reshape(-1, 1)).reshape(-1, self.size[0], 1)
         else:
-            data = df_data.values
-        
-        self.data_x = data[border1:border2]
-        if self.inverse:
-            self.data_y = scaler.inverse_transform(data_y[border1:border2])
-        else:
-            self.data_y = data_y[border1:border2]
+            data = scaler.fit_transform(data.reshape(-1, data.shape[-1])).reshape(-1, self.size[0], data.shape[-1])
+        return data, scaler
 
-        df_stamp = df_raw[['date']][border1:border2]
-        df_stamp['date'] = pd.to_datetime(df_stamp.date)
-        if self.timeenc == 0:
-            df_stamp['month'] = df_stamp.date.apply(lambda row: row.month, 1)
-            df_stamp['day'] = df_stamp.date.apply(lambda row: row.day, 1)
-            df_stamp['weekday'] = df_stamp.date.apply(lambda row: row.weekday(), 1)
-            df_stamp['hour'] = df_stamp.date.apply(lambda row: row.hour, 1)
-            data_stamp = df_stamp.drop(['date'], axis=1).values
-        elif self.timeenc == 1:
-            data_stamp = time_features(df_stamp, timeenc=self.timeenc, freq=self.freq)
-        self.data_stamp = data_stamp
-    
+    def __len__(self):
+        return len(self.target) - self.size[0] - self.size[1] + 1
+
     def __getitem__(self, index):
-        s_begin = index
-        s_end = s_begin + self.seq_len
-        r_begin = s_end - self.label_len 
-        r_end = r_begin + self.label_len + self.pred_len
+        i = index
+        seq_x = self.features[i:i+self.size[0]].astype(self.dtype)
+        seq_y = self.target[i+self.size[0]:i+self.size[0]+self.size[1]].astype(self.dtype)
 
-        seq_x = self.data_x[s_begin:s_end]
-        if self.inverse:
-            seq_y = np.concatenate([self.data_x[r_begin:r_begin+self.label_len], self.data_y[r_begin+self.label_len:r_end]], 0)
-        else:
-            seq_y = self.data_y[r_begin:r_end]
-        seq_x_mark = self.data_stamp[s_begin:s_end]
-        seq_y_mark = self.data_stamp[r_begin:r_end]
+        seq_x_mark = np.ones([self.size[0], 1]).astype(self.dtype)
+        seq_y_mark = np.ones([self.size[1], 1]).astype(self.dtype)
 
         return seq_x, seq_y, seq_x_mark, seq_y_mark
-    
-    def __len__(self):
-        return len(self.data_x) - self.seq_len- self.pred_len + 1
 
-    def inverse_transform(self, data):
-        return self.scaler.inverse_transform(data)
 
 class Dataset_Pred(Dataset):
-    def __init__(self, root_path, kind_of_scaler = 'MinMax',flag='pred', size=None, 
-                 features='MS', data_path='data.csv', 
-                 target='Close', scale=False, inverse=False, timeenc=0, freq='b', cols=None):
-        # size [seq_len, label_len, pred_len]
-        # info
-        if size == None:
-            self.seq_len = 1*5*3
-            self.label_len = 1*1
-            self.pred_len = 1*1
-        else:
-            self.seq_len = size[0]
-            self.label_len = size[1]
-            self.pred_len = size[2]
-        # init
-        assert flag in ['pred']
-        
+    def __init__(self, root_path, data_path, flag, size, features, target, scale, inverse, timeenc, freq, dtype, take_data_instead_of_reading, direct_data, target_data, cols, kind_of_scaler, scale_with_a_copy_of_target):
+        super(Dataset_Pred, self).__init__()
+
+        self.root_path = root_path
+        self.data_path = data_path
+        self.flag = flag
+        self.size = size
         self.features = features
         self.target = target
         self.scale = scale
         self.inverse = inverse
         self.timeenc = timeenc
         self.freq = freq
-        self.cols=cols
-        self.root_path = root_path
-        self.data_path = data_path
+        self.dtype = dtype
+        self.take_data_instead_of_reading = take_data_instead_of_reading
+        self.direct_data = direct_data
+        self.target_data = target_data
+        self.cols = cols
         self.kind_of_scaler = kind_of_scaler
-        self.__read_data__()
+        self.scale_with_a_copy_of_target = scale_with_a_copy_of_target
 
-    def __read_data__(self):
-        
-        if self.kind_of_scaler == 'MinMax':
-            self.scaler = MinMaxScaler()
-        elif self.kind_of_scaler == 'Standard':
-            self.scaler = StandardScaler()
-        else:
-            self.scale = False
-        
-        df_raw = pd.read_csv(os.path.join(self.root_path,
-                                          self.data_path))
-        '''
-        df_raw.columns: ['date', ...(other features), target feature]
-        '''
-        if self.cols:
-            cols=self.cols.copy()
-            cols.remove(self.target)
-        else:
-            cols = list(df_raw.columns); cols.remove(self.target); cols.remove('date')
-        df_raw = df_raw[['date']+cols+[self.target]]
-        
-        border1 = len(df_raw)-self.seq_len
-        border2 = len(df_raw)
-        
-        if self.features=='M' or self.features=='MS':
-            cols_data = df_raw.columns[1:]
-            df_data = df_raw[cols_data]
-        elif self.features=='S':
-            df_data = df_raw[[self.target]]
+        if self.take_data_instead_of_reading:
+            self.data = self.data_path
+            self.data = np.array(self.data)
 
+            self.origin_data = self.data
+        else:
+            self._read_data()
+        self._gen_data()
+
+    def _read_data(self):
+        data_path = self.root_path + self.data_path + self.flag + '.npy'
+        data = np.load(data_path)
+        self.data = data
+
+    def _gen_data(self):
+        # data process
+        scale_range = (-1, 1) if self.scale else (0, 1)
+
+        # temporal encoding
+        timeenc = np.tile(np.array(range(self.size[0]))[:, None], [1, self.size[1]])
+        timeenc = timeenc / max(timeenc.flatten())
+
+        data = self.data
+
+        if self.features == 'M' or self.features == 'S':
+            # time features
+            if self.timeenc == 1:
+                data_time = np.concatenate([np.sin(2 * np.pi * timeenc), np.cos(2 * np.pi * timeenc)], axis=-1)
+                data = np.concatenate([data, data_time], axis=-1)
+        elif self.features == 'MS':
+            # time features
+            if self.timeenc == 1:
+                data_time = np.concatenate([np.sin(2 * np.pi * timeenc), np.cos(2 * np.pi * timeenc)], axis=-1)
+                data = np.concatenate([data, data_time], axis=-1)
+
+        self.data = data
+
+        # target
+        self.target = self.data[:, :, self.cols.index(self.target)].reshape((-1, self.size[0], 1))
+
+        # features
+        self.features = np.delete(self.data, self.cols.index(self.target), axis=-1)
+
+        # normalize
         if self.scale:
-            self.scaler.fit(df_data.values)
-            data = self.scaler.transform(df_data.values)
-        else:
-            data = df_data.values
-            
-        tmp_stamp = df_raw[['date']][border1:border2]
-        tmp_stamp['date'] = pd.to_datetime(tmp_stamp.date)
-        pred_dates = pd.date_range(tmp_stamp.date.values[-1], periods=self.pred_len+1, freq=self.freq)
-        
-        df_stamp = pd.DataFrame(columns = ['date'])
-        df_stamp.date = list(tmp_stamp.date.values) + list(pred_dates[1:])
-        data_stamp = time_features(df_stamp, timeenc=self.timeenc, freq=self.freq[-1:])
+            self.origin_target = self.target.copy()
+            self.origin_data = self.data.copy()
 
-        self.data_x = data[border1:border2]
+            self.target, self.target_scaler = self._scale(self.target)
+            self.features, self.feature_scaler = self._scale(self.features)
+
         if self.inverse:
-            self.data_y = df_data.values[border1:border2]
+            self.origin_target = self.target.copy()
+            self.origin_data = self.data.copy()
+
+    def _scale(self, data):
+        if self.kind_of_scaler == 'MinMax':
+            scaler = MinMaxScaler(feature_range=self.scale_range)
+        elif self.kind_of_scaler == 'Standard':
+            scaler = StandardScaler()
+        elif self.kind_of_scaler == 'Robust':
+            scaler = RobustScaler()
+        elif self.kind_of_scaler == 'Quantile':
+            scaler = QuantileTransformer()
+        elif self.kind_of_scaler == 'MaxAbs':
+            scaler = MaxAbsScaler()
+        elif self.kind_of_scaler == 'Power':
+            scaler = PowerTransformer()
         else:
-            self.data_y = data[border1:border2]
-        self.data_stamp = data_stamp
-    
+            scaler = MinMaxScaler(feature_range=self.scale_range)
+        if self.scale_with_a_copy_of_target:
+            data = scaler.fit_transform(data.reshape(-1, 1)).reshape(-1, self.size[0], 1)
+        else:
+            data = scaler.fit_transform(data.reshape(-1, data.shape[-1])).reshape(-1, self.size[0], data.shape[-1])
+        return data, scaler
+
+    def __len__(self):
+        return len(self.target) - self.size[0] - self.size[1] + 1
+
     def __getitem__(self, index):
-        s_begin = index
-        s_end = s_begin + self.seq_len
-        r_begin = s_end - self.label_len
-        r_end = r_begin + self.label_len + self.pred_len
+        i = index
+        seq_x = self.features[i:i+self.size[0]].astype(self.dtype)
+        seq_y = self.target[i+self.size[0]:i+self.size[0]+self.size[1]].astype(self.dtype)
 
-        seq_x = self.data_x[s_begin:s_end]
-        if self.inverse:
-            seq_y = self.data_x[r_begin:r_begin+self.label_len]
-        else:
-            seq_y = self.data_y[r_begin:r_begin+self.label_len]
-        seq_x_mark = self.data_stamp[s_begin:s_end]
-        seq_y_mark = self.data_stamp[r_begin:r_end]
+        seq_x_mark = np.ones([self.size[0], 1]).astype(self.dtype)
+        seq_y_mark = np.ones([self.size[1], 1]).astype(self.dtype)
 
         return seq_x, seq_y, seq_x_mark, seq_y_mark
-    
-    def __len__(self):
-        return len(self.data_x) - self.seq_len + 1
 
-    def inverse_transform(self, data):
-        return self.scaler.inverse_transform(data)
 
 class Dataset_ETT_hour(Dataset):
     def __init__(self, root_path, flag='train', size=None, 
