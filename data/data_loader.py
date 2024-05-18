@@ -28,8 +28,8 @@ class Dataset_Custom(Dataset):
             self.label_len = size[1]
             self.pred_len = size[2]
         # init
-        assert flag in ['train', 'test', 'val']
-        type_map = {'train':0, 'val':1, 'test':2}
+        assert flag in ['train', 'test', 'pred']
+        type_map = {'train':0, 'pred':1, 'test':2}
         self.set_type = type_map[flag]
         self.features = features
         
@@ -53,15 +53,12 @@ class Dataset_Custom(Dataset):
         self.__read_data__()
 
     def _scale_data_(self, X):
-        if self.kind_of_scaler == 'MinMax' and self.scale : 
+        if self.kind_of_scaler == 'MinMax': 
             scaler = MinMaxScaler()
-        elif self.kind_of_scaler == 'Standard' and self.scale:
+        elif self.kind_of_scaler == 'Standard':
             scaler = StandardScaler()
-        elif self.scale == 'True':
+        else:
             warrnings.warn("the scale job was failed! check the  self.scale  and  self.kind_of_scaler  and make sure the right values of them ! ")
-            return X
-        else
-            self.scale = False 
             return X
         # X should be One of the cols 
         X_reshaped = X.reshape((-1, 1))
