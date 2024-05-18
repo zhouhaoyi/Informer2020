@@ -23,7 +23,6 @@ class Exp_Informer(Exp_Basic):
     def __init__(self, args):
         super(Exp_Informer, self).__init__(args)
         self.train_losses_ = []
-        #self.val_loses_ = []
         self.actual_train = []
         self.predicted_train = []
     
@@ -44,7 +43,7 @@ class Exp_Informer(Exp_Basic):
                 self.args.factor,
                 self.args.d_model, 
                 self.args.n_heads, 
-                e_layers, # self.args.e_layers,
+                e_layers,
                 self.args.d_layers, 
                 self.args.d_ff,
                 self.args.dropout, 
@@ -86,7 +85,7 @@ class Exp_Informer(Exp_Basic):
         elif flag=='pred':
             shuffle_flag = args.shuffle_for_pred if hasattr(args, 'shuffle_for_pred') else False
             drop_last = False
-            batch_size = 1; 
+            batch_size = 1
             freq=args.detail_freq
             Data = Dataset_Pred
         else:
@@ -101,19 +100,18 @@ class Exp_Informer(Exp_Basic):
             flag=flag,
             size=[args.seq_len, args.label_len, args.pred_len],
             features=args.features,
-            target=args.target if hasattr(args, 'target'),
-            scale = args.scale if hasattr(args, 'scale'),
-            inverse=args.inverse if hasattr(args, 'inverse'),
+            target=args.target if hasattr(args, 'target') else None,
+            scale = args.scale if hasattr(args, 'scale') else None,
+            inverse=args.inverse if hasattr(args, 'inverse') else False,
             timeenc=timeenc,
             freq=freq,
-            dtype= args.dtype_ if hasattr(args, 'dtype_'),
-            take_data_instead_of_reading = args.take_data_instead_of_reading if hasattr(args, 'take_data_instead_of_reading'),
-            direct_data = args.direct_data if hasattr(args, 'direct_data'),
-            target_data = args.target_data if hasattr(args, 'target_data'),
-            cols = args.cols if hasattr(args, 'cols'),
+            dtype= args.dtype_ if hasattr(args, 'dtype_') else torch.float32,
+            take_data_instead_of_reading = args.take_data_instead_of_reading if hasattr(args, 'take_data_instead_of_reading') else False,
+            direct_data = args.direct_data if hasattr(args, 'direct_data') else None,
+            target_data = args.target_data if hasattr(args, 'target_data') else None,
+            cols = args.cols if hasattr(args, 'cols') else None,
             kind_of_scaler = args.kind_of_scaler if hasattr(args, 'kind_of_scaler') else 'MinMax' ,
-            scale_with_a_copy_of_target = args.scale_with_a_copy_of_target if hasattr(args, 'scale_with_a_copy_of_target')
-            
+            scale_with_a_copy_of_target = args.scale_with_a_copy_of_target if hasattr(args, 'scale_with_a_copy_of_target') else None
         )
         print(flag, len(data_set))
         data_loader = DataLoader(
@@ -171,8 +169,6 @@ class Exp_Informer(Exp_Basic):
             criterion = nn.MSELoss()  # Default to Mean Squared Error
         return criterion
 
-
-
     def vali(self, vali_data, vali_loader, criterion):
         self.model.eval()
         total_loss = []
@@ -186,13 +182,8 @@ class Exp_Informer(Exp_Basic):
         return total_loss
 
     def train(self, setting):
-        #train_losses_ = []
-        #val_loses_ = []
-        #test_loses__data = []
-        
-        train_data, train_loader = self._get_data(flag = 'train')
-        #vali_data, vali_loader = self._get_data(flag = 'val')
-        test_data, test_loader = self._get_data(flag = 'test')
+        train_data, train_loader = self._get_data(flag='train')
+        test_data, test_loader = self._get_data(flag='test')
 
         path = os.path.join(self.args.checkpoints, setting)
         if not os.path.exists(path):
@@ -242,10 +233,8 @@ class Exp_Informer(Exp_Basic):
 
             print("Epoch: {} cost time: {}".format(epoch+1, time.time()-epoch_time))
             train_loss = np.average(train_loss)
-            #vali_loss = self.vali(vali_data, vali_loader, criterion)
             test_loss = self.vali(test_data, test_loader, criterion)
             self.train_losses_.append(train_loss)
-            #self.val_loses_.append(vali_loss)
             test_loses__data.append(test_loss)
 
             print("Epoch: {0}, Steps: {1} | Train Loss: {2:.7f} Test Loss: {4:.7f}".format(
@@ -270,7 +259,6 @@ class Exp_Informer(Exp_Basic):
         preds = []
         trues = []
 
-
         for i, (batch_x,batch_y,batch_x_mark,batch_y_mark) in enumerate(test_loader):
             pred, true = self._process_one_batch(
                 test_data, batch_x, batch_y, batch_x_mark, batch_y_mark)
@@ -283,7 +271,6 @@ class Exp_Informer(Exp_Basic):
             self.mape_.append(mape)
             self.mspe_.append(mspe)
 
-
         preds = np.array(preds, dtype = self.args.dtype_)
         trues = np.array(trues, dtype = self.args.dtype_)
         print('test shape:', preds.shape, trues.shape)
@@ -291,7 +278,6 @@ class Exp_Informer(Exp_Basic):
         trues = trues.reshape(-1, trues.shape[-2], trues.shape[-1])
         print('test shape:', preds.shape, trues.shape)
 
-        # result save
         folder_path = './results/' + setting +'/'
         if not os.path.exists(folder_path):
             os.makedirs(folder_path)
@@ -322,9 +308,7 @@ class Exp_Informer(Exp_Basic):
             preds.append(pred.detach().cpu().numpy())
 
         preds = np.array(preds)
-        #preds = preds.reshape(-1, preds.shape[-2], preds.shape[-1])
         
-        # result save
         folder_path = './results/' + setting +'/'
         if not os.path.exists(folder_path):
             os.makedirs(folder_path)
@@ -340,13 +324,12 @@ class Exp_Informer(Exp_Basic):
         batch_x_mark = batch_x_mark.float().to(self.device)
         batch_y_mark = batch_y_mark.float().to(self.device)
 
-        # decoder input
         if self.args.padding==0:
             dec_inp = torch.zeros([batch_y.shape[0], self.args.pred_len, batch_y.shape[-1]]).float()
         elif self.args.padding==1:
             dec_inp = torch.ones([batch_y.shape[0], self.args.pred_len, batch_y.shape[-1]]).float()
         dec_inp = torch.cat([batch_y[:,:self.args.label_len,:], dec_inp], dim=1).float().to(self.device)
-        # encoder - decoder
+
         if self.args.use_amp:
             with torch.cuda.amp.autocast():
                 if self.args.output_attention:
