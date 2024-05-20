@@ -74,12 +74,12 @@ class Exp_Informer(Exp_Basic):
         timeenc = 0 if args.embed!='timeF' else 1
 
         if flag == 'test':
-            shuffle_flag = False; drop_last = True; batch_size = args.batch_size; freq=args.freq
+            shuffle_flag = args.shuffle_test; drop_last = True; batch_size = args.batch_size; freq=args.freq
         elif flag=='pred':
-            shuffle_flag = False; drop_last = False; batch_size = 1; freq=args.detail_freq
+            shuffle_flag = args.shuffle_pred; drop_last = False; batch_size = 1; freq=args.detail_freq
             Data = Dataset_Pred
         else:
-            shuffle_flag = True; drop_last = True; batch_size = args.batch_size; freq=args.freq
+            shuffle_flag = args.shuffle_train; drop_last = True; batch_size = args.batch_size; freq=args.freq
         data_set = Data(
             root_path=args.root_path,
             data_path=args.data_path,
