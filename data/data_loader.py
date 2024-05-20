@@ -6,7 +6,7 @@ import torch
 from torch.utils.data import Dataset, DataLoader
 # from sklearn.preprocessing import StandardScaler
 
-from utils.tools import StandardScaler
+from utils.tools import StandardScaler, MinMaxScaler
 from utils.timefeatures import time_features
 
 import warnings
@@ -37,6 +37,7 @@ class Dataset_ETT_hour(Dataset):
         self.inverse = inverse
         self.timeenc = timeenc
         self.freq = freq
+        
         
         self.root_path = root_path
         self.data_path = data_path
@@ -188,7 +189,7 @@ class Dataset_ETT_minute(Dataset):
 class Dataset_Custom(Dataset):
     def __init__(self, root_path, flag='train', size=None, 
                  features='S', data_path='ETTh1.csv', 
-                 target='OT', scale=True, inverse=False, timeenc=0, freq='h', cols=None):
+                 target='OT', scale=True, inverse=False, timeenc=0, freq='h', cols=None, kind_of_scaler = None):
         # size [seq_len, label_len, pred_len]
         # info
         if size == None:
@@ -213,10 +214,16 @@ class Dataset_Custom(Dataset):
         self.cols=cols
         self.root_path = root_path
         self.data_path = data_path
+        self.kind_of_scaler = kind_of_scaler if kind_of_scaler is not None else 'Standard'
         self.__read_data__()
 
     def __read_data__(self):
-        self.scaler = StandardScaler()
+        if self.kind_of_scaler == 'Standard':
+            self.scaler = StandardScaler()
+        elif self.kind_of_scaler == 'MinMax':
+            self.scaler = MinMaxScaler()
+        else:
+            self.scaler = StandardScaler()
         df_raw = pd.read_csv(os.path.join(self.root_path,
                                           self.data_path))
         '''
