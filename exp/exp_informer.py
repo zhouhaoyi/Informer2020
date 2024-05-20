@@ -27,6 +27,7 @@ class Exp_Informer(Exp_Basic):
         self.train_losses_ = []
         self.actual_train = []
         self.predicted_train = []
+        self.cloner174 = None
     
     
     def _build_model(self):
@@ -234,6 +235,8 @@ class Exp_Informer(Exp_Basic):
                 model_optim.zero_grad()
                 pred, true = self._process_one_batch(
                     train_data, batch_x, batch_y, batch_x_mark, batch_y_mark)
+                self.predicted_train.append(pred)
+                self.actual_train.append(true)
                 loss = criterion(pred, true)
                 train_loss.append(loss.item())
                 
@@ -283,6 +286,11 @@ class Exp_Informer(Exp_Basic):
         
         preds = []
         trues = []
+        #mae_ = []
+        #mse_ = []
+        #rmse_ = []
+        #mape_ = []
+        #mspe_ = []
         
         for i, (batch_x,batch_y,batch_x_mark,batch_y_mark) in enumerate(test_loader):
             pred, true = self._process_one_batch(
@@ -290,11 +298,11 @@ class Exp_Informer(Exp_Basic):
             preds.append(pred)
             trues.append(true)
             mae, mse, rmse, mape, mspe = metric(pred.detach().cpu().numpy(), true.detach().cpu().numpy())
-            self.mae_.append(mae)
-            self.mse_.append(mse)
-            self.rmse_.append(rmse)
-            self.mape_.append(mape)
-            self.mspe_.append(mspe)
+            #mae_.append(mae)
+            #mse_.append(mse)
+            #rmse_.append(rmse)
+            #mape_.append(mape)
+            #mspe_.append(mspe)
         
         preds = np.array(preds, dtype = self.args.dtype_)
         trues = np.array(trues, dtype = self.args.dtype_)
@@ -309,9 +317,10 @@ class Exp_Informer(Exp_Basic):
         
         mae, mse, rmse, mape, mspe = metric(preds, trues)
         print('mse:{}, mae:{}'.format(mse, mae))
-        np.save(folder_path+'metrics.npy', np.array([mae, mse, rmse, mape, mspe]))
-        np.save(folder_path+'pred.npy', preds)
-        np.save(folder_path+'true.npy', trues)
+        self.cloner174 = np.array([mae, mse, rmse, mape, mspe])
+        #np.save(folder_path+'metrics.npy', np.array([mae, mse, rmse, mape, mspe]))
+        #np.save(folder_path+'pred.npy', preds)
+        #np.save(folder_path+'true.npy', trues)
         
         return
     
