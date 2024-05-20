@@ -9,12 +9,15 @@ import warnings
 import torch
 from torch.utils.data import Dataset
 from utils.timefeatures import time_features
-from sklearn.preprocessing import StandardScaler, MinMaxScaler, PowerTransformer, RobustScaler, QuantileTransformer, MaxAbsScaler, Normalizer, Binarizer
+from sklearn.preprocessing import MinMaxScaler, PowerTransformer, RobustScaler, QuantileTransformer, MaxAbsScaler, Normalizer, Binarizer
+
+from utils.tools import StandardScaler
+
 
 warnings.filterwarnings('ignore')
 
 
-def __detect_scaler__(name):
+def detect_scaler(name):
     if name == 'MinMax':
         scaler = MinMaxScaler()
     elif name == 'Standard':
@@ -99,37 +102,40 @@ class Dataset_Custom(Dataset):
         self.__read_data__()
     
     
-    def __scale_data__(self, X, id_=None, range_of_fit=None):
+    def __scale_data__(self, data, target_name=None, range_of_fit=None):
         
-        if self.inverse:
-            if id_ is not None:
-                dum_num = np.random.randint(10000)
-                random_path = os.path.join(self.root_path, 'scalers', f'dummy{dum_num}prossess')
-                file_name = f'{self.kind_of_scaler}Scaler{id_}.joblib'
-                try:
-                    os.mkdir(random_path)
-                except FileExistsError:
-                    pass
-                except Exception as e:
-                    random_path = self.root_path
+        if target_name is not None:
+            dum_num = np.random.randint(10000)
+            random_path = os.path.join(self.root_path, 'scalers', f'dummy{dum_num}prossess')
+            file_name = f'{self.kind_of_scaler}Scaler{target_name}.joblib'
+            try:
+                os.mkdir(random_path)
+            except FileExistsError:
+                pass
+            except Exception as e:
+                random_path = self.root_path
         try:
-            scaler = __detect_scaler__(self.kind_of_scaler)
+            scaler = detect_scaler(self.kind_of_scaler)
         except:
             warnings.warn("the scale job was failed! check the  self.scale  and  self.kind_of_scaler  and make sure the right values of them ! ")
-            return X
-        range_of_fit = range_of_fit if range_of_fit is not None else ((X.shape[0]) // 2, X.shape[0])
-        X_scaler = scaler.fit(X[range_of_fit[0]:range_of_fit[1],])
-        if self.inverse and id_ is not None:
-            joblib.dump(X_scaler, os.path.join(random_path, file_name))
-            self.path_to_scaler_of_target = os.path.join(random_path, file_name)
-            #print(f" The Scaler of Target DataColumn {self.target} with id -> {id_} was seccessfuly saved in : ", self.path_to_scaler_of_target)
-            time.sleep(1)
-            scalled_X = X_scaler.transform(X)
-            return scalled_X, random_path, file_name
+            return data.values
+        range_of_fit = range_of_fit if range_of_fit is not None else ((data.shape[0]) // 2, data.shape[0])
+        scaled_columns = []
+        for col in data.columns:
+            scaler = detect_scaler(self.kind_of_scaler)
+            col_val = data[[col]].values
+            col_scaler = scaler.fit(col_val[range_of_fit[0]:range_of_fit[1],])
+            if target_name is not None:
+                if target_name == col:
+                    joblib.dump(col_scaler, os.path.join(random_path, file_name))
+                    self.path_to_scaler_of_target = os.path.join(random_path, file_name)
+            scaled_col = col_scaler.transform(col_val)
+            scaled_columns.append(scaled_col)
+        if len(scaled_columns) == 1 :
+            scaled_data = scaled_columns[0]
         else:
-            scalled_X = X_scaler.transform(X)
-            
-            return scalled_X
+            scaled_data = np.concatenate(scaled_columns, axis=1)
+        return scaled_data
     
     def __read_data__(self):
         
@@ -263,6 +269,12 @@ class Dataset_Custom(Dataset):
         border1 = border1s[self.set_type]
         border2 = border2s[self.set_type]
         
+        if self.features == 'M' or self.features == 'MS':
+            cols_data = df_raw.columns[1:]
+            df_data = df_raw[cols_data]
+        elif self.features == 'S':
+            df_data = df_raw[[self.target]]
+        
         if self.scale_with_a_copy_of_target:
             if self.direct_target_column :
                 target = self.direct_target_column.copy()
@@ -283,42 +295,14 @@ class Dataset_Custom(Dataset):
                 else:
                         raise ValueError(" You Should Provide direct_target_column is 2 dim ! ")
             else:
-                target = df_raw[[self.target]].values
-        if self.features == 'M' or self.features == 'MS':
-            cols_data = df_raw.columns[1:]
-            df_data = df_raw[cols_data]
-        elif self.features == 'S':
-            df_data = df_raw[[self.target]]
-        #scale_map = []
+                target = df_data[[self.target]].values
+        
         if self.scale:
             train_data = (border1s[0],border2s[0])
-            if self.features == 'M' or self.features == 'MS':
-                columns_scaled = []
-                for any_ in df_data.columns:
-                    temp_col = df_data[[any_]].values
-                    if any_ == self.target and self.inverse:
-                        col_scaled, path_to_scaler, scaler_name = self.__scale_data__(X=temp_col, id_=any_, range_of_fit = train_data)
-                        self.path_to_scaler_of_target = os.path.join(path_to_scaler, scaler_name)
-                    else:
-                        col_scaled = self.__scale_data__(X=temp_col, range_of_fit=train_data)
-                    columns_scaled.append(col_scaled)
-                scaled_data = np.concatenate(columns_scaled, axis=1)
-            else:
-                temp_col = df_data.values
-                if self.inverse:
-                    scaled_data, path_to_scaler, scaler_name = self.__scale_data__(X=temp_col, id_=self.target, range_of_fit=train_data)
-                    scale_map = {
-                            "Before Standard": list(temp_col),
-                            "After Standard": list(scaled_data)
-                        }
-                    self.path_to_scaler_of_target = os.path.join(path_to_scaler, scaler_name)
-                    scale_map = pd.DataFrame(scale_map)
-                    scale_map.to_csv(os.path.join(path_to_scaler, 'Scale Map.csv'), index = False)
-                else:
-                    scaled_data = self.__scale_data__(temp_col, train_data)
-            data = scaled_data
+            data = self.__scale_data__(data=df_data, target_name=self.target, range_of_fit = train_data)
         else:
             data = df_data.values
+        
         
         df_stamp = df_raw[['date']][border1:border2]
         df_stamp['date'] = pd.to_datetime(df_stamp.date)
@@ -331,13 +315,18 @@ class Dataset_Custom(Dataset):
         elif self.timeenc == 1:
             data_stamp = time_features(df_stamp, timeenc=self.timeenc, freq=self.freq)
         
-        self.data_x = data[border1:border2]
+        
         
         if target is not None:
             data = data[:, :-1]
             data = np.column_stack((data, target))
         
-        self.data_y = data[border1:border2]
+        self.data_x = data[border1:border2]
+        if self.inverse:
+            self.data_y = df_data.values[border1:border2]
+        else:
+            self.data_y = data[border1:border2]
+        
         self.data_stamp = data_stamp
     
     
@@ -366,18 +355,28 @@ class Dataset_Custom(Dataset):
         else:
             scaler = joblib.load(self.path_to_scaler_of_target)
             
-            data_numpy = data.detach().cpu().numpy()
+            
+            if torch.is_tensor(data):
+                data_numpy = data.detach().cpu().numpy()
+            else:
+                data_numpy = data
+            
             data_reshaped = data_numpy.reshape(-1, 1)
             inversed_data = scaler.inverse_transform(data_reshaped)
-            inversed_data_tensor = torch.from_numpy(inversed_data).float()
+            inversed_data = inversed_data.reshape(data_numpy.shape)
+            
+            
+            if torch.is_tensor(data):
+                inversed_data_tensor = torch.from_numpy(inversed_data).type_as(data).to(data.device)
+            else:
+                inversed_data_tensor = inversed_data
             
             map_of_scaled_x = {
-                    "Before Standard": list(data_numpy),
-                    "After Standard": list(inversed_data)
+                "Before Standard": list(data_numpy.flatten()),
+                "After Standard": list(inversed_data.flatten())
             }
-            #scale_map.append(map_of_scaled_x)
             map_of_scaled_x = pd.DataFrame(map_of_scaled_x)
-            map_of_scaled_x.to_csv(os.path.join(self.root_path, 'Scale Map.csv'), index = False)
+            map_of_scaled_x.to_csv(os.path.join(self.root_path, 'Scale Map.csv'), index=False)
             
             return inversed_data_tensor
     
@@ -434,7 +433,7 @@ class Dataset_Custom_Pred(Dataset):
         self.direct_date_column = direct_date_column
         self.direct_to_replace = direct_to_replace
         self.dtype_ = dtype_
-        self.scaler = __detect_scaler__(kind_of_scaler)
+        #self.scaler = detect_scaler(kind_of_scaler)
         self.path_to_scaler_of_target = path_to_scaler_of_target if path_to_scaler_of_target is not None else None
         self.__read_data__()
     
@@ -579,16 +578,7 @@ class Dataset_Custom_Pred(Dataset):
         
         if self.scale:
             if self.features == 'M' or self.features == 'MS':
-                columns_scaled = []
-                for col in df_data.columns:
-                    temp_col = df_data[[col]].values
-                    if col == self.target and self.inverse:
-                        col_scaled, path_to_scaler, scaler_name = self.__scale_data__(X=temp_col, id_=col, range_of_fit=(0, border1))
-                        self.path_to_scaler_of_target = os.path.join(path_to_scaler, scaler_name)
-                    else:
-                        col_scaled = self.__scale_data__(X=temp_col, range_of_fit=(0, border1))
-                    columns_scaled.append(col_scaled)
-                scaled_data = np.concatenate(columns_scaled, axis=1)
+                data = self.__scale_data__(data=df_data,target_name=self.target,range_of_fit=(0, border1))
             else:
                 temp_col = df_data.values
                 if self.inverse:
@@ -616,28 +606,37 @@ class Dataset_Custom_Pred(Dataset):
         self.data_stamp = data_stamp
     
     
-    def __scale_data__(self, X, id_=None, range_of_fit=None):
-        scaler = __detect_scaler__(self.kind_of_scaler)
-        range_of_fit = range_of_fit if range_of_fit is not None else (0, len(X))
-        X_scaler = scaler.fit(X[range_of_fit[0]:range_of_fit[1]])
+    def __scale_data__(self, data, target_name=None, range_of_fit=None):
         
-        if self.inverse and id_ is not None:
+        if target_name is not None:
             dum_num = np.random.randint(10000)
-            random_path = os.path.join(self.root_path, 'scalers', f'dummy{dum_num}process')
-            file_name = f'{self.kind_of_scaler}Scaler{id_}.joblib'
+            random_path = os.path.join(self.root_path, 'scalers', f'dummy{dum_num}prossess')
+            file_name = f'{self.kind_of_scaler}Scaler{target_name}.joblib'
             try:
                 os.mkdir(random_path)
             except FileExistsError:
                 pass
             except Exception as e:
                 random_path = self.root_path
-            joblib.dump(X_scaler, os.path.join(random_path, file_name))
-            self.path_to_scaler_of_target = os.path.join(random_path, file_name)
-            scalled_X = X_scaler.transform(X)
-            return scalled_X, random_path, file_name
-        else:
-            scalled_X = X_scaler.transform(X)
-            return scalled_X
+        try:
+            scaler = detect_scaler(self.kind_of_scaler)
+        except:
+            warnings.warn("the scale job was failed! check the  self.scale  and  self.kind_of_scaler  and make sure the right values of them ! ")
+            return data.values
+        range_of_fit = range_of_fit if range_of_fit is not None else ((data.shape[0]) // 2, data.shape[0])
+        scaled_columns = []
+        for col in data.columns:
+            scaler = detect_scaler(self.kind_of_scaler)
+            col_val = data[[col]].values
+            col_scaler = scaler.fit(col_val[range_of_fit[0]:range_of_fit[1],])
+            if target_name is not None:
+                if target_name == col:
+                    joblib.dump(col_scaler, os.path.join(random_path, file_name))
+                    self.path_to_scaler_of_target = os.path.join(random_path, file_name)
+            scaled_col = col_scaler.transform(col_val)
+            scaled_columns.append(scaled_col)
+        scaled_data = np.concatenate(scaled_columns, axis=1)
+        return scaled_data
     
     
     def __getitem__(self, index):
