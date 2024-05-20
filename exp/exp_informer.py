@@ -9,7 +9,7 @@ import warnings
 from torch import optim
 from torch.utils.data import DataLoader
 from data.data_loader import Dataset_ETT_hour, Dataset_ETT_minute, Dataset_Pred
-#from data_loader import  Dataset_Pred
+import pandas as pd
 from exp.exp_basic import Exp_Basic
 from models.model import Informer, InformerStack
 from utils.tools import EarlyStopping, adjust_learning_rate
@@ -27,7 +27,11 @@ class Exp_Informer(Exp_Basic):
         self.train_losses_ = []
         self.actual_train = []
         self.predicted_train = []
-        self.cloner174 = None
+        self.mae_ = []
+        self.mse_ = []
+        self.rmse_ = []
+        self.mape_ = []
+        self.mspe_ = []
     
     
     def _build_model(self):
@@ -286,41 +290,36 @@ class Exp_Informer(Exp_Basic):
         
         preds = []
         trues = []
-        #mae_ = []
-        #mse_ = []
-        #rmse_ = []
-        #mape_ = []
-        #mspe_ = []
         
         for i, (batch_x,batch_y,batch_x_mark,batch_y_mark) in enumerate(test_loader):
             pred, true = self._process_one_batch(
                 test_data, batch_x, batch_y, batch_x_mark, batch_y_mark)
-            preds.append(pred)
-            trues.append(true)
+            preds.append(pred.detach().cpu().numpy())
+            trues.append(true.detach().cpu().numpy())
             mae, mse, rmse, mape, mspe = metric(pred.detach().cpu().numpy(), true.detach().cpu().numpy())
-            #mae_.append(mae)
-            #mse_.append(mse)
-            #rmse_.append(rmse)
-            #mape_.append(mape)
-            #mspe_.append(mspe)
+            self.mae_.append(mae)
+            self.mse_.append(mse)
+            self.rmse_.append(rmse)
+            self.mape_.append(mape)
+            self.mspe_.append(mspe)
         
         preds = np.array(preds, dtype = self.args.dtype_)
         trues = np.array(trues, dtype = self.args.dtype_)
         print('test shape:', preds.shape, trues.shape)
         preds = preds.reshape(-1, preds.shape[-2], preds.shape[-1])
         trues = trues.reshape(-1, trues.shape[-2], trues.shape[-1])
+        preds_flat = preds.reshape(preds.shape[0], -1)
+        trues_flat = trues.reshape(trues.shape[0], -1)
         print('test shape:', preds.shape, trues.shape)
         
         folder_path = './results/' + setting +'/'
         if not os.path.exists(folder_path):
             os.makedirs(folder_path)
-        
         mae, mse, rmse, mape, mspe = metric(preds, trues)
         print('mse:{}, mae:{}'.format(mse, mae))
-        self.cloner174 = np.array([mae, mse, rmse, mape, mspe])
-        #np.save(folder_path+'metrics.npy', np.array([mae, mse, rmse, mape, mspe]))
-        #np.save(folder_path+'pred.npy', preds)
-        #np.save(folder_path+'true.npy', trues)
+        np.savetxt(folder_path+'metrics.csv', np.array([mae, mse, rmse, mape, mspe]), delimiter=',', fmt='%.2f')
+        np.savetxt(os.path.join(folder_path, 'preds.csv'), preds_flat, delimiter=',', fmt='%.6f')
+        np.savetxt(os.path.join(folder_path, 'trues.csv'), trues_flat, delimiter=',', fmt='%.6f')
         
         return
     

@@ -6,6 +6,7 @@ import numpy as np
 import pandas as pd
 import joblib
 import warnings
+import torch
 from torch.utils.data import Dataset
 from utils.timefeatures import time_features
 from sklearn.preprocessing import StandardScaler, MinMaxScaler, PowerTransformer, RobustScaler, QuantileTransformer, MaxAbsScaler, Normalizer, Binarizer
@@ -364,16 +365,21 @@ class Dataset_Custom(Dataset):
             return data
         else:
             scaler = joblib.load(self.path_to_scaler_of_target)
-            inversed_data = scaler.inverse_transform(data)
+            
+            data_numpy = data.detach().cpu().numpy()
+            data_reshaped = data_numpy.reshape(-1, 1)
+            inversed_data = scaler.inverse_transform(data_reshaped)
+            inversed_data_tensor = torch.from_numpy(inversed_data).float()
+            
             map_of_scaled_x = {
-                    "Before Standard": list(data),
+                    "Before Standard": list(data_numpy),
                     "After Standard": list(inversed_data)
             }
             #scale_map.append(map_of_scaled_x)
             map_of_scaled_x = pd.DataFrame(map_of_scaled_x)
             map_of_scaled_x.to_csv(os.path.join(self.root_path, 'Scale Map.csv'), index = False)
             
-            return inversed_data
+            return inversed_data_tensor
     
 #end#
 
