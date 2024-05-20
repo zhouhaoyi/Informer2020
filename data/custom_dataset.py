@@ -531,7 +531,7 @@ class Dataset_Custom_Pred(Dataset):
     
     
     def __handle_date_column_issue__(self, df_raw):
-        cols = df_raw.columns
+        cols = list(df_raw.columns)
         date_name = input("Please enter the correct name of the time column or type 'q' to exit: ")
         if date_name.lower() == 'q':
             raise ValueError("Exiting due to user request.")
