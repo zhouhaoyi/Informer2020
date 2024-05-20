@@ -89,6 +89,7 @@ class Exp_Informer(Exp_Basic):
             target=args.target,
             inverse=args.inverse,
             scale = args.scale,
+            kind_of_scaler = args.kind_of_scaler
             timeenc=timeenc,
             freq=freq,
             cols=args.cols
