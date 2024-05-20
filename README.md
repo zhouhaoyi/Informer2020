@@ -1,4 +1,6 @@
 # Informer: Beyond Efficient Transformer for Long Sequence Time-Series Forecasting (AAAI'21 Best Paper)
+
+
 ![Python 3.6](https://img.shields.io/badge/python-3.6-green.svg?style=plastic)
 ![PyTorch 1.2](https://img.shields.io/badge/PyTorch%20-%23EE4C2C.svg?style=plastic)
 ![cuDNN 7.3.1](https://img.shields.io/badge/cudnn-7.3.1-green.svg?style=plastic)
@@ -73,21 +75,6 @@ for file in `ls scripts`; do make run_module module="bash scripts/$script"; done
 ```
 
 ## Usage
-<span id="colablink">Colab Examples:</span> We provide google colabs to help reproduce and customize our repo, which includes `experiments(train and test)`, `prediction`, `visualization` and `custom data`.
-[![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/drive/1_X7O2BkFLvqyCdZzDZvV2MB0aAvYALLC)
-
-Commands for training and testing the model with *ProbSparse* self-attention on Dataset ETTh1, ETTh2 and ETTm1 respectively:
-
-```bash
-# ETTh1
-python -u main_informer.py --model informer --data ETTh1 --attn prob --freq h
-
-# ETTh2
-python -u main_informer.py --model informer --data ETTh2 --attn prob --freq h
-
-# ETTm1
-python -u main_informer.py --model informer --data ETTm1 --attn prob --freq t
-```
 
 More parameter information please refer to `main_informer.py`.
 
