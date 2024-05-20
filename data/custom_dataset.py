@@ -222,7 +222,7 @@ class Dataset_Custom(Dataset):
     
     def __arrange_columns__(self, df_raw):
         
-        cols = df_raw.columns
+        cols = list(df_raw.columns)
         if 'date' not in cols:
             df_raw = self.__update_column_in_data__(df_raw, 'date')
         try:
