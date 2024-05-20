@@ -9,15 +9,15 @@ import warnings
 import torch
 from torch.utils.data import Dataset
 from utils.timefeatures import time_features
-from sklearn.preprocessing import MinMaxScaler, PowerTransformer, RobustScaler, QuantileTransformer, MaxAbsScaler, Normalizer, Binarizer
+from sklearn.preprocessing import StandardScaler, MinMaxScaler, PowerTransformer, RobustScaler, QuantileTransformer, MaxAbsScaler, Normalizer, Binarizer
 
-from utils.tools import StandardScaler
+#from utils.tools import StandardScaler
 
 
 warnings.filterwarnings('ignore')
 
 
-def detect_scaler(name):
+def detect_scaler(name, output_distrib = None):
     if name == 'MinMax':
         scaler = MinMaxScaler()
     elif name == 'Standard':
@@ -25,7 +25,8 @@ def detect_scaler(name):
     elif name == 'Robust':
         scaler = RobustScaler()
     elif name == 'Quantile':
-        scaler = QuantileTransformer()
+        output_distrib = output_distrib if output_distrib is not None else 'normal' 
+        scaler = QuantileTransformer(output_distribution= output_distrib)
     elif name == 'MaxAbs':
         scaler = MaxAbsScaler()
     elif name == 'Power':
@@ -60,11 +61,13 @@ class Dataset_Custom(Dataset):
                 target='Close',                         # Target feature to predict.
                 scale=False,                            # If True, scale the data.
                 inverse=False,                          # If True, inverse scaling is applied.
+                save_scaler_object = False,
                 timeenc=0,                              # Type of time encoding to use (0: month, day, weekday, hour).
                 freq='b',                               # Frequency of time data ('b': business day, 'h': hour, 't': minute).
                 cols=None,                              # Columns to include in the dataset.
                 path_to_scaler_of_target = None,
-                dtype_=None):                           # Data type of the dataset.
+                output_distribution_ = 'normal', # This just work with QuantileTransformer #also could use -> uniform -> less comon
+                dtype_=None ):                           # Data type of the dataset.
         
         if size is None:
             self.seq_len = 10
@@ -98,16 +101,26 @@ class Dataset_Custom(Dataset):
         self.direct_data = direct_data_df
         self.take_data_instead_of_reading = take_data_instead_of_reading
         self.path_to_scaler_of_target = path_to_scaler_of_target if path_to_scaler_of_target is not None else None
+        self.scaler = detect_scaler(kind_of_scaler)
+        self.output_distribution_ = output_distribution_
+        self.min_ = None
+        self.scale_ = None
+        self.data_min_ = None
+        self.data_max_ = None
+        self.scale_ = None
+        self.min_ = None
+        self.mean_ = None
+        self.center_ = None
+        self.save_scaler_object = save_scaler_object
         
         self.__read_data__()
     
-    
-    def __scale_data__(self, data, target_name=None, range_of_fit=None):
+    def __scale_data__(self, data , range_of_fit=None):
         
-        if target_name is not None:
+        if self.save_scaler_object:
             dum_num = np.random.randint(10000)
             random_path = os.path.join(self.root_path, 'scalers', f'dummy{dum_num}prossess')
-            file_name = f'{self.kind_of_scaler}Scaler{target_name}.joblib'
+            file_name = f'{self.kind_of_scaler}Scaler{self.target}.joblib'
             try:
                 os.mkdir(random_path)
             except FileExistsError:
@@ -122,19 +135,51 @@ class Dataset_Custom(Dataset):
         range_of_fit = range_of_fit if range_of_fit is not None else ((data.shape[0]) // 2, data.shape[0])
         scaled_columns = []
         for col in data.columns:
-            scaler = detect_scaler(self.kind_of_scaler)
             col_val = data[[col]].values
-            col_scaler = scaler.fit(col_val[range_of_fit[0]:range_of_fit[1],])
-            if target_name is not None:
-                if target_name == col:
-                    joblib.dump(col_scaler, os.path.join(random_path, file_name))
+            if col == self.target:
+                self.scaler.fit(col_val[range_of_fit[0]:range_of_fit[1],])
+                if isinstance(scaler, MinMaxScaler):
+                    self.data_min_ = torch.tensor(self.scaler.data_min_, dtype=torch.float32)
+                    self.data_max_ = torch.tensor(self.scaler.data_max_, dtype=torch.float32)
+                    self.scale_ = torch.tensor(self.scaler.scale_, dtype=torch.float32)
+                    self.min_ = torch.tensor(self.scaler.min_, dtype=torch.float32)
+                elif isinstance(self.scaler, StandardScaler):
+                    self.mean_ = torch.tensor(self.scaler.mean_, dtype=torch.float32)
+                    self.scale_ = torch.tensor(self.scaler.scale_, dtype=torch.float32)
+                elif isinstance(self.scaler, RobustScaler):
+                    self.center_ = torch.tensor(self.scaler.center_, dtype=torch.float32)
+                    self.scale_ = torch.tensor(self.scaler.scale_, dtype=torch.float32)
+                elif isinstance(self.scaler, QuantileTransformer):
+                    self.references_ = torch.tensor(self.scaler.references_, dtype=torch.float32)
+                    self.quantiles_ = torch.tensor(self.scaler.quantiles_, dtype=torch.float32)
+                elif isinstance(self.scaler, MaxAbsScaler):
+                    self.max_abs_ = torch.tensor(self.scaler.max_abs_, dtype=torch.float32)
+                elif isinstance(self.scaler, PowerTransformer):
+                    self.lambdas_ = torch.tensor(self.scaler.lambdas_, dtype=torch.float32)
+                elif isinstance(self.scaler, Normalizer):
+                    self.norm_ = torch.tensor(self.scaler.norm, dtype=torch.float32)
+                elif isinstance(self.scaler, Binarizer):
+                    self.threshold_ = torch.tensor(self.scaler.threshold, dtype=torch.float32)
+                else:
+                    raise NotImplementedError("No Way!")
+                if self.save_scaler_object:
+                    joblib.dump(self.scaler, os.path.join(random_path, file_name))
                     self.path_to_scaler_of_target = os.path.join(random_path, file_name)
-            scaled_col = col_scaler.transform(col_val)
+                
+                scaled_col = self.scaler.transform(col_val)
+                
+            else:
+                scaler = detect_scaler(self.kind_of_scaler)
+                col_scaler = scaler.fit(col_val[range_of_fit[0]:range_of_fit[1],])
+                scaled_col = col_scaler.transform(col_val)
+            
             scaled_columns.append(scaled_col)
+            
         if len(scaled_columns) == 1 :
             scaled_data = scaled_columns[0]
         else:
             scaled_data = np.concatenate(scaled_columns, axis=1)
+        
         return scaled_data
     
     def __read_data__(self):
@@ -294,12 +339,10 @@ class Dataset_Custom(Dataset):
                         pass
                 else:
                         raise ValueError(" You Should Provide direct_target_column is 2 dim ! ")
-            else:
-                target = df_data[[self.target]].values
         
         if self.scale:
             train_data = (border1s[0],border2s[0])
-            data = self.__scale_data__(data=df_data, target_name=self.target, range_of_fit = train_data)
+            data = self.__scale_data__(data=df_data, range_of_fit = train_data)
         else:
             data = df_data.values
         
@@ -317,15 +360,22 @@ class Dataset_Custom(Dataset):
         
         
         
-        if target is not None:
-            data = data[:, :-1]
-            data = np.column_stack((data, target))
-        
-        self.data_x = data[border1:border2]
-        if self.inverse:
-            self.data_y = df_data.values[border1:border2]
-        else:
+        if self.scale_with_a_copy_of_target:
+            if self.direct_target_column:
+                data = data[:, :-1]
+                data = np.column_stack((data, target))
+            else:
+                data = data[:, :-1]
+                target = df_data[[self.target]].values
+                data = np.column_stack((data, target))
+            self.data_x = data[border1:border2]
             self.data_y = data[border1:border2]
+        else:
+            self.data_x = data[border1:border2]
+            if self.inverse:
+                self.data_y = df_data.values[border1:border2]
+            else:
+                self.data_y = data[border1:border2]
         
         self.data_stamp = data_stamp
     
@@ -349,36 +399,54 @@ class Dataset_Custom(Dataset):
     def __len__(self):
         return len(self.data_x) - self.seq_len - self.pred_len + 1
     
+    
     def inverse_transform(self, data):
+        
         if self.scale_with_a_copy_of_target:
             return data
         else:
-            scaler = joblib.load(self.path_to_scaler_of_target)
+            if isinstance(self.scaler, MinMaxScaler):
+                min_ = self.min_.to(data.device)
+                scale_ = self.scale_.to(data.device)
+                data_min_ = self.data_min_.to(data.device)
+                data_max_ = self.data_max_.to(data.device)
+                inversed_data = (data - min_) / scale_ * (data_max_ - data_min_) + data_min_
+            elif isinstance(self.scaler, StandardScaler):
+                mean_ = self.mean_.to(data.device)
+                scale_ = self.scale_.to(data.device)
+                inversed_data = data * scale_ + mean_
+            elif isinstance(self.scaler, RobustScaler):
+                center_ = self.center_.to(data.device)
+                scale_ = self.scale_.to(data.device)
+                inversed_data = data * scale_ + center_
+            elif isinstance(self.scaler, QuantileTransformer):
+                from scipy.stats import norm, uniform  # Used for QuantileTransformer inverse transformation
+                quantiles_ = self.quantiles_.to(data.device)
+                if self.output_distribution_ == 'normal':
+                    inversed_data = torch.tensor(norm.ppf(data.cpu().numpy(), loc=0, scale=1), dtype=data.dtype, device=data.device)
+                elif self.output_distribution_ == 'uniform':
+                    inversed_data = torch.tensor(uniform.ppf(data.cpu().numpy(), loc=0, scale=1), dtype=data.dtype, device=data.device)
+            elif isinstance(self.scaler, MaxAbsScaler):
+                max_abs_ = self.max_abs_.to(data.device)
+                inversed_data = data * max_abs_
+            elif isinstance(self.scaler, PowerTransformer):
+                lambdas_ = self.lambdas_.to(data.device)
+                # Power transformation inverse (Box-Cox or Yeo-Johnson)
+                if self.scaler.method == 'box-cox':
+                    inversed_data = (torch.pow(data * lambdas_ + 1, 1 / lambdas_) - 1) / lambdas_
+                elif self.scaler.method == 'yeo-johnson':
+                    inversed_data = torch.zeros_like(data)
+                    positive_data = data >= 0
+                    inversed_data[positive_data] = (torch.pow(data[positive_data] * lambdas_ + 1, 1 / lambdas_) - 1) / lambdas_
+                    inversed_data[~positive_data] = (1 - torch.pow(1 - data[~positive_data] * lambdas_, 1 / lambdas_)) / lambdas_
+            elif isinstance(self.scaler, Normalizer):
+                norm_ = self.norm_.to(data.device)
+                inversed_data = data * norm_ 
+            elif isinstance(self.scaler, Binarizer):
+                threshold_ = self.threshold_.to(data.device)
+                inversed_data = (data > threshold_).float()
             
-            
-            if torch.is_tensor(data):
-                data_numpy = data.detach().cpu().numpy()
-            else:
-                data_numpy = data
-            
-            data_reshaped = data_numpy.reshape(-1, 1)
-            inversed_data = scaler.inverse_transform(data_reshaped)
-            inversed_data = inversed_data.reshape(data_numpy.shape)
-            
-            
-            if torch.is_tensor(data):
-                inversed_data_tensor = torch.from_numpy(inversed_data).type_as(data).to(data.device)
-            else:
-                inversed_data_tensor = inversed_data
-            
-            map_of_scaled_x = {
-                "Before Standard": list(data_numpy.flatten()),
-                "After Standard": list(inversed_data.flatten())
-            }
-            map_of_scaled_x = pd.DataFrame(map_of_scaled_x)
-            map_of_scaled_x.to_csv(os.path.join(self.root_path, 'Scale Map.csv'), index=False)
-            
-            return inversed_data_tensor
+            return inversed_data
     
 #end#
 

@@ -25,8 +25,9 @@ class Exp_Informer(Exp_Basic):
         
         super(Exp_Informer, self).__init__(args)
         self.train_losses_ = []
-        self.actual_train = []
-        self.predicted_train = []
+        self.test_loses__data = []
+        self.predicted_values = []
+        self.actual_values = []
         self.mae_ = []
         self.mse_ = []
         self.rmse_ = []
@@ -123,6 +124,8 @@ class Exp_Informer(Exp_Basic):
             inverse=args.inverse if hasattr(args, 'inverse') else False,
             timeenc=timeenc,
             freq=freq,
+            output_distribution_ = args.output_distribution_ if hasattr(args, 'output_distribution_') else 'normal',
+            save_scaler_object = args.save_scaler_object if hasattr(args, 'save_scaler_object') else False,
             dtype_= args.dtype_ if hasattr(args, 'dtype_') else None,
             take_data_instead_of_reading = args.take_data_instead_of_reading if hasattr(args, 'take_data_instead_of_reading') else False,
             direct_data_df = args.direct_data_df if hasattr(args, 'direct_data_df') else None,
@@ -220,7 +223,7 @@ class Exp_Informer(Exp_Basic):
         
         train_steps = len(train_loader)
         early_stopping = EarlyStopping(patience=self.args.patience, verbose=True)
-        test_loses__data = []
+        
         model_optim = self._select_optimizer()
         criterion =  self._select_criterion()
         
@@ -239,8 +242,6 @@ class Exp_Informer(Exp_Basic):
                 model_optim.zero_grad()
                 pred, true = self._process_one_batch(
                     train_data, batch_x, batch_y, batch_x_mark, batch_y_mark)
-                self.predicted_train.append(pred)
-                self.actual_train.append(true)
                 loss = criterion(pred, true)
                 train_loss.append(loss.item())
                 
@@ -264,7 +265,7 @@ class Exp_Informer(Exp_Basic):
             train_loss = np.average(train_loss)
             test_loss = self.vali(test_data, test_loader, criterion)
             self.train_losses_.append(train_loss)
-            test_loses__data.append(test_loss)
+            self.test_loses__data.append(test_loss)
             
             print("Epoch: {0}, Steps: {1} | Train Loss: {2:.7f} Test Loss: {3:.7f}".format(
                 epoch + 1, train_steps, train_loss, test_loss))
@@ -296,6 +297,8 @@ class Exp_Informer(Exp_Basic):
                 test_data, batch_x, batch_y, batch_x_mark, batch_y_mark)
             preds.append(pred.detach().cpu().numpy())
             trues.append(true.detach().cpu().numpy())
+            self.predicted_values.append(pred.detach().cpu().numpy())
+            self.actual_values.append(true.detach().cpu().numpy())
             mae, mse, rmse, mape, mspe = metric(pred.detach().cpu().numpy(), true.detach().cpu().numpy())
             self.mae_.append(mae)
             self.mse_.append(mse)

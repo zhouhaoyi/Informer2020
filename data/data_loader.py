@@ -86,7 +86,7 @@ class Dataset_Pred(Dataset):
         s_end = s_begin + self.seq_len
         r_begin = s_end - self.label_len
         r_end = r_begin + self.label_len + self.pred_len
-
+        
         seq_x = self.data_x[s_begin:s_end]
         if self.inverse:
             seq_y = self.data_x[r_begin:r_begin+self.label_len]
@@ -94,12 +94,12 @@ class Dataset_Pred(Dataset):
             seq_y = self.data_y[r_begin:r_begin+self.label_len]
         seq_x_mark = self.data_stamp[s_begin:s_end]
         seq_y_mark = self.data_stamp[r_begin:r_end]
-
+        
         return seq_x, seq_y, seq_x_mark, seq_y_mark
     
     def __len__(self):
         return len(self.data_x) - self.seq_len + 1
-
+    
     def inverse_transform(self, data):
         return self.scaler.inverse_transform(data)
 

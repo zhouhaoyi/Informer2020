@@ -100,11 +100,11 @@ args.kind_of_optim = 'AdamW'                 # optimizer to use, options:  AdamW
 
 args.inverse=False
 
-args.scale=False
+args.scale=True
 
 args.kind_of_scaler = 'MinMax'                       #   Standard   or   MinMax
 
-args.scale_with_a_copy_of_target = False           # Create a copy of Target with another name,
+args.scale_with_a_copy_of_target = True           # Create a copy of Target with another name,
 #                                                 Scale it along side others.and then replace its name with actual name of targert
 
 args.dtype_ = None                  #np.float64              #      dtype to load the main data file using it.
@@ -118,6 +118,8 @@ args.shuffle_for_train  =  True
 
 args.criter =  'mse'           # lose function options:  WMAPE | SMAPE | MAE | RMSE | QuantileLoss | HuberLoss | PinballLoss
 
+#args.save_scaler_object = False
+#args.output_distribution_ = 'normal'       # This just work with QuantileTransformer #also could use -> uniform -> less comon
 
 
 args.detail_freq = args.freq
