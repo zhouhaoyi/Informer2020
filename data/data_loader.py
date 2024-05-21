@@ -243,7 +243,7 @@ class Dataset_Custom(Dataset):
             self.scaler = StandardScaler()
         
         if self.take_data_instead_of_reading:
-            df_raw = direct_data
+            df_raw = self.direct_data
         else:
             df_raw = pd.read_csv(os.path.join(self.root_path,
                                               self.data_path))
