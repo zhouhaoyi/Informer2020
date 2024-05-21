@@ -187,9 +187,22 @@ class Dataset_ETT_minute(Dataset):
 
 
 class Dataset_Custom(Dataset):
-    def __init__(self, root_path, flag='train', size=None, 
-                 features='S', data_path='ETTh1.csv', 
-                 target='OT', scale=True, inverse=False, timeenc=0, freq='h', cols=None, kind_of_scaler = None):
+    def __init__(self, 
+                 root_path, 
+                 flag='train', 
+                 size=None, 
+                 features='MS',
+                 data_path='data.csv', 
+                 target='Close', 
+                 scale=True, 
+                 inverse=False,
+                 timeenc=0, 
+                 freq='h', 
+                 cols=None, 
+                 kind_of_scaler = None,
+                 test_size = 0.2,
+                 take_data_instead_of_reading = False,
+                 direct_data = None):
         # size [seq_len, label_len, pred_len]
         # info
         if size == None:
@@ -204,7 +217,11 @@ class Dataset_Custom(Dataset):
         assert flag in ['train', 'test', 'val']
         type_map = {'train':0, 'val':1, 'test':2}
         self.set_type = type_map[flag]
-        
+
+        self.take_data_instead_of_reading = take_data_instead_of_reading
+        self.direct_data = direct_data
+        self.test_size = test_size
+        self.train_size = 0.90 - self.test_size
         self.features = features
         self.target = target
         self.scale = scale
@@ -224,8 +241,12 @@ class Dataset_Custom(Dataset):
             self.scaler = MinMaxScaler()
         else:
             self.scaler = StandardScaler()
-        df_raw = pd.read_csv(os.path.join(self.root_path,
-                                          self.data_path))
+        
+        if self.take_data_instead_of_reading:
+            df_raw = direct_data
+        else:
+            df_raw = pd.read_csv(os.path.join(self.root_path,
+                                              self.data_path))
         '''
         df_raw.columns: ['date', ...(other features), target feature]
         '''
@@ -237,8 +258,8 @@ class Dataset_Custom(Dataset):
             cols = list(df_raw.columns); cols.remove(self.target); cols.remove('date')
         df_raw = df_raw[['date']+cols+[self.target]]
 
-        num_train = int(len(df_raw)*0.7)
-        num_test = int(len(df_raw)*0.2)
+        num_train = int(len(df_raw)*self.train_size)
+        num_test = int(len(df_raw)*self.test_size)
         num_vali = len(df_raw) - num_train - num_test
         border1s = [0, num_train-self.seq_len, len(df_raw)-num_test-self.seq_len]
         border2s = [num_train, num_train+num_vali, len(df_raw)]
