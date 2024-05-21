@@ -21,8 +21,9 @@ print("This is The Enhanced Version of Orginal code , Written in 2024 ")
 time.sleep(2)
 
 class Exp_Informer(Exp_Basic):
-    def __init__(self, args):
+    def __init__(self, args, direct_data = None):
         super(Exp_Informer, self).__init__(args)
+        self.direct_data = direct_data
         self.train_losses = []
         self.test_losses = []
         self.actual_test_values = []
@@ -88,6 +89,10 @@ class Exp_Informer(Exp_Basic):
             Data = Dataset_Pred
         else:
             shuffle_flag = args.shuffle_for_train; drop_last = True; batch_size = args.batch_size; freq=args.freq
+        if args.take_data_instead_of_reading:
+            direct_data = self.direct_data
+        else:
+            direct_data = None
         data_set = Data(
             root_path=args.root_path,
             data_path=args.data_path,
@@ -101,7 +106,7 @@ class Exp_Informer(Exp_Basic):
             timeenc=timeenc,
             test_size = args.test_size,
             take_data_instead_of_reading = args.take_data_instead_of_reading,
-            direct_data = args.direct_data,
+            direct_data = direct_data,
             freq=freq,
             cols=args.cols
         )
