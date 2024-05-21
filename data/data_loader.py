@@ -1,7 +1,7 @@
 import os
 import numpy as np
 import pandas as pd
-
+import joblib
 import torch
 from torch.utils.data import Dataset, DataLoader
 # from sklearn.preprocessing import StandardScaler
@@ -268,9 +268,9 @@ class Dataset_Custom(Dataset):
 
         
         if self.scale:
-            col_data = df_data[[col]].values
             col_scaled = []
             for col in df_data.columns:
+                col_data = df_data[[col]].values
                 if self.kind_of_scaler == 'MinMax':
                     if col == self.target:
                         self.scaler = MinMaxScaler()
