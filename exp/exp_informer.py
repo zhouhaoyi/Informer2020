@@ -99,6 +99,7 @@ class Exp_Informer(Exp_Basic):
             timeenc=timeenc,
             test_size = args.test_size,
             take_data_instead_of_reading = args.take_data_instead_of_reading,
+            direct_data = args.direct_data,
             freq=freq,
             cols=args.cols
         )
