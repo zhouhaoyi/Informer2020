@@ -3,3 +3,4 @@ numpy == 1.19.4
 pandas == 0.25.1
 scikit_learn == 0.21.3
 torch == 1.8.0
+joblib
