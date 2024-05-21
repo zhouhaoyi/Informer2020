@@ -283,7 +283,7 @@ class Dataset_Custom(Dataset):
                         scaler = StandardScaler()
                 if col == self.target:
                     self.scaler.fit(col_data[border1s[0]:border2s[0]])
-                    joblib.dump(self.scaler, os.path.join(self.root_path, 'scaler.pkl')
+                    joblib.dump(self.scaler, os.path.join(self.root_path, 'scaler.pkl'))
                     col_temp = self.scaler.transform(col_data)
                 else:
                     scaler.fit(col_data[border1s[0]:border2s[0]])
