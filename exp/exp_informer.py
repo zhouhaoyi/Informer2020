@@ -254,7 +254,7 @@ class Exp_Informer(Exp_Basic):
 
     def test(self, setting):
         test_data, test_loader = self._get_data(flag='test')
-        
+        criterion =  self._select_criterion()
         self.model.eval()
         
         preds = []
