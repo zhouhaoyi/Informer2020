@@ -227,5 +227,5 @@ If you have any questions, feel free to contact Haoyi Zhou through Email (zhouha
 
 ## Acknowledgments
 Thanks for the computing infrastructure provided by Beijing Advanced Innovation Center for Big Data and Brain Computing ([BDBC](http://bdbc.buaa.edu.cn/)).
-At the same time, thank you all for your attention to this work! [![hits](https://hits.tianyucn98.workers.dev/informer.svg?action=hit&title=hits&title_bg=%23555555&count_bg=%2320af0d&edge_flat=false)](https://hits.tianyucn98.workers.dev)
+At the same time, thank you all for your attention to this work! [![hits](https://hits.tianyucn98.workers.dev/informer.svg?action=hit&title=hits&title_bg=%23555555&count_bg=%238CC443&edge_flat=false)](https://hits.tianyucn98.workers.dev)
 [![Stargazers repo roster for @zhouhaoyi/Informer2020](https://reporoster.com/stars/zhouhaoyi/Informer2020)](https://github.com/zhouhaoyi/Informer2020/stargazers)
