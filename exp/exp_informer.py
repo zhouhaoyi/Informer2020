@@ -1,6 +1,7 @@
 from data.data_loader import Dataset_ETT_hour, Dataset_ETT_minute, Dataset_Custom, Dataset_Pred
 from exp.exp_basic import Exp_Basic
 from models.model import Informer, InformerStack
+from utils.criter import WeightedMeanAbsolutePercentageError, SymmetricMeanAbsolutePercentageError,RMSELoss,QuantileLoss,HuberLoss,PinballLoss
 
 from utils.tools import EarlyStopping, adjust_learning_rate
 from utils.metrics import metric
@@ -17,10 +18,19 @@ import time
 
 import warnings
 warnings.filterwarnings('ignore')
+print("This is The Enhanced Version of Orginal code , Written in 2024 ")
+time.sleep(2)
 
 class Exp_Informer(Exp_Basic):
-    def __init__(self, args):
+    def __init__(self, args, direct_data = None):
         super(Exp_Informer, self).__init__(args)
+        self.direct_data = direct_data
+        self.train_losses = []
+        self.test_losses = []
+        self.actual_test_values = []
+        self.predicted_test_values = []
+        
+        
     
     def _build_model(self):
         model_dict = {
@@ -74,12 +84,16 @@ class Exp_Informer(Exp_Basic):
         timeenc = 0 if args.embed!='timeF' else 1
 
         if flag == 'test':
-            shuffle_flag = False; drop_last = True; batch_size = args.batch_size; freq=args.freq
+            shuffle_flag = args.shuffle_for_test; drop_last = True; batch_size = args.batch_size; freq=args.freq
         elif flag=='pred':
-            shuffle_flag = False; drop_last = False; batch_size = 1; freq=args.detail_freq
+            shuffle_flag = args.shuffle_for_pred; drop_last = False; batch_size = 1; freq=args.detail_freq
             Data = Dataset_Pred
         else:
-            shuffle_flag = True; drop_last = True; batch_size = args.batch_size; freq=args.freq
+            shuffle_flag = args.shuffle_for_train; drop_last = True; batch_size = args.batch_size; freq=args.freq
+        if args.take_data_instead_of_reading:
+            direct_data = self.direct_data
+        else:
+            direct_data = None
         data_set = Data(
             root_path=args.root_path,
             data_path=args.data_path,
@@ -88,7 +102,10 @@ class Exp_Informer(Exp_Basic):
             features=args.features,
             target=args.target,
             inverse=args.inverse,
+            scale = args.scale,
+            kind_of_scaler = args.kind_of_scaler,
             timeenc=timeenc,
+            test_size = args.test_size,
             freq=freq,
             cols=args.cols
         )
@@ -103,11 +120,52 @@ class Exp_Informer(Exp_Basic):
         return data_set, data_loader
 
     def _select_optimizer(self):
-        model_optim = optim.Adam(self.model.parameters(), lr=self.args.learning_rate)
+        if self.args.kind_of_optim == 'AdamW':
+            model_optim = optim.AdamW(self.model.parameters(), lr=self.args.learning_rate)
+        elif self.args.kind_of_optim == 'SparseAdam':
+            model_optim = optim.SparseAdam(self.model.parameters(), lr=self.args.learning_rate)
+        elif self.args.kind_of_optim == 'SGD':
+            model_optim = optim.SGD(self.model.parameters(), lr=self.args.learning_rate)
+        elif self.args.kind_of_optim == 'RMSprop':
+            model_optim = optim.RMSprop(self.model.parameters(), lr=self.args.learning_rate)
+        elif self.args.kind_of_optim == 'RAdam':
+            model_optim = optim.RAdam(self.model.parameters(), lr=self.args.learning_rate)
+        elif self.args.kind_of_optim == 'NAdam':
+            model_optim = optim.NAdam(self.model.parameters(), lr=self.args.learning_rate)
+        elif self.args.kind_of_optim == 'LBFGS':
+            model_optim = optim.LBFGS(self.model.parameters(), lr=self.args.learning_rate)
+        elif self.args.kind_of_optim == 'Adamax':
+            model_optim = optim.Adamax(self.model.parameters(), lr=self.args.learning_rate)
+        elif self.args.kind_of_optim == 'ASGD':
+            model_optim = optim.ASGD(self.model.parameters(), lr=self.args.learning_rate)
+        elif self.args.kind_of_optim == 'Adadelta':
+            model_optim = optim.Adadelta(self.model.parameters(), lr=self.args.learning_rate)
+        elif self.args.kind_of_optim == 'Adagrad':
+            model_optim = optim.Adagrad(self.model.parameters(), lr=self.args.learning_rate)
+        else:
+            model_optim = optim.Adam(self.model.parameters(), lr=self.args.learning_rate)
+        
         return model_optim
     
     def _select_criterion(self):
-        criterion =  nn.MSELoss()
+        
+        if self.args.criter.lower() == 'wmape':
+            criterion = WeightedMeanAbsolutePercentageError()
+        elif self.args.criter.lower() == 'smape':
+            criterion = SymmetricMeanAbsolutePercentageError()
+        elif self.args.criter.lower() == 'mae':
+            criterion = nn.L1Loss()
+        elif self.args.criter.lower() == 'rmse':
+            criterion = RMSELoss()
+        elif self.args.criter.lower() == 'quantileloss':
+            criterion = QuantileLoss()
+        elif self.args.criter.lower() == 'huberloss':
+            criterion = HuberLoss()
+        elif self.args.criter.lower() == 'pinballloss':
+            criterion = PinballLoss()
+        else:
+            criterion = nn.MSELoss()  # Default to Mean Squared Error
+        
         return criterion
 
     def vali(self, vali_data, vali_loader, criterion):
@@ -157,6 +215,7 @@ class Exp_Informer(Exp_Basic):
                 loss = criterion(pred, true)
                 train_loss.append(loss.item())
                 
+                
                 if (i+1) % 100==0:
                     print("\titers: {0}, epoch: {1} | loss: {2:.7f}".format(i + 1, epoch + 1, loss.item()))
                     speed = (time.time()-time_now)/iter_count
@@ -177,7 +236,8 @@ class Exp_Informer(Exp_Basic):
             train_loss = np.average(train_loss)
             vali_loss = self.vali(vali_data, vali_loader, criterion)
             test_loss = self.vali(test_data, test_loader, criterion)
-
+            self.train_losses.append(train_loss)
+            self.test_losses.append(test_loss)
             print("Epoch: {0}, Steps: {1} | Train Loss: {2:.7f} Vali Loss: {3:.7f} Test Loss: {4:.7f}".format(
                 epoch + 1, train_steps, train_loss, vali_loss, test_loss))
             early_stopping(vali_loss, self.model, path)
@@ -205,6 +265,10 @@ class Exp_Informer(Exp_Basic):
                 test_data, batch_x, batch_y, batch_x_mark, batch_y_mark)
             preds.append(pred.detach().cpu().numpy())
             trues.append(true.detach().cpu().numpy())
+            
+            self.actual_test_values.append(true.detach().cpu().numpy())
+            self.predicted_test_values.append(pred.detach().cpu().numpy())            
+            
 
         preds = np.array(preds)
         trues = np.array(trues)

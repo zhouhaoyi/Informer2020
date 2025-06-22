@@ -1,12 +1,12 @@
 import os
 import numpy as np
 import pandas as pd
-
+import joblib
 import torch
 from torch.utils.data import Dataset, DataLoader
-# from sklearn.preprocessing import StandardScaler
+from sklearn.preprocessing import MinMaxScaler, StandardScaler
 
-from utils.tools import StandardScaler
+#from utils.tools import StandardScaler
 from utils.timefeatures import time_features
 
 import warnings
@@ -37,6 +37,7 @@ class Dataset_ETT_hour(Dataset):
         self.inverse = inverse
         self.timeenc = timeenc
         self.freq = freq
+        
         
         self.root_path = root_path
         self.data_path = data_path
@@ -186,15 +187,26 @@ class Dataset_ETT_minute(Dataset):
 
 
 class Dataset_Custom(Dataset):
-    def __init__(self, root_path, flag='train', size=None, 
-                 features='S', data_path='ETTh1.csv', 
-                 target='OT', scale=True, inverse=False, timeenc=0, freq='h', cols=None):
+    def __init__(self, 
+                 root_path, 
+                 flag='train', 
+                 size=None, 
+                 features='MS',
+                 data_path='data.csv', 
+                 target='Close', 
+                 scale=True, 
+                 inverse=False,
+                 timeenc=0, 
+                 freq='b', 
+                 cols=None, 
+                 kind_of_scaler = None,
+                 test_size = 0.2):
         # size [seq_len, label_len, pred_len]
         # info
         if size == None:
-            self.seq_len = 24*4*4
-            self.label_len = 24*4
-            self.pred_len = 24*4
+            self.seq_len = 1*5*2
+            self.label_len = 1*1
+            self.pred_len = 1*1
         else:
             self.seq_len = size[0]
             self.label_len = size[1]
@@ -203,7 +215,9 @@ class Dataset_Custom(Dataset):
         assert flag in ['train', 'test', 'val']
         type_map = {'train':0, 'val':1, 'test':2}
         self.set_type = type_map[flag]
-        
+
+        self.test_size = test_size
+        self.train_size = 0.90 - self.test_size
         self.features = features
         self.target = target
         self.scale = scale
@@ -213,12 +227,13 @@ class Dataset_Custom(Dataset):
         self.cols=cols
         self.root_path = root_path
         self.data_path = data_path
+        self.kind_of_scaler = kind_of_scaler if kind_of_scaler is not None else 'Standard'
         self.__read_data__()
 
     def __read_data__(self):
-        self.scaler = StandardScaler()
+        
         df_raw = pd.read_csv(os.path.join(self.root_path,
-                                          self.data_path))
+                                              self.data_path))
         '''
         df_raw.columns: ['date', ...(other features), target feature]
         '''
@@ -230,8 +245,8 @@ class Dataset_Custom(Dataset):
             cols = list(df_raw.columns); cols.remove(self.target); cols.remove('date')
         df_raw = df_raw[['date']+cols+[self.target]]
 
-        num_train = int(len(df_raw)*0.7)
-        num_test = int(len(df_raw)*0.2)
+        num_train = int(len(df_raw)*self.train_size)
+        num_test = int(len(df_raw)*self.test_size)
         num_vali = len(df_raw) - num_train - num_test
         border1s = [0, num_train-self.seq_len, len(df_raw)-num_test-self.seq_len]
         border2s = [num_train, num_train+num_vali, len(df_raw)]
@@ -244,10 +259,39 @@ class Dataset_Custom(Dataset):
         elif self.features=='S':
             df_data = df_raw[[self.target]]
 
+        
         if self.scale:
-            train_data = df_data[border1s[0]:border2s[0]]
-            self.scaler.fit(train_data.values)
-            data = self.scaler.transform(df_data.values)
+            if self.features=='S' or self.features=='MS':
+                col_scaled = []
+                for col in df_data.columns:
+                    col_data = df_data[[col]].values
+                    if self.kind_of_scaler == 'MinMax':
+                        if col == self.target:
+                            self.scaler = MinMaxScaler()
+                        else:
+                            scaler = MinMaxScaler()
+                    else:
+                        if col == self.target:
+                            self.scaler = StandardScaler()
+                        else:
+                            scaler = StandardScaler()
+                    if col == self.target:
+                        self.scaler.fit(col_data[border1s[0]:border2s[0]])
+                        joblib.dump(self.scaler, os.path.join(self.root_path, 'scaler.pkl'))
+                        col_temp = self.scaler.transform(col_data)
+                    else:
+                        scaler.fit(col_data[border1s[0]:border2s[0]])
+                        col_temp = scaler.transform(col_data)
+                    col_scaled.append(col_temp)
+                if len(col_scaled) == 1:
+                    data = col_scaled[0]
+                else:
+                    data = np.concatenate(col_scaled, axis = 1)
+            else:
+                self.scaler = StandardScaler()
+                train_data = df_data[border1s[0]:border2s[0]]
+                self.scaler.fit(train_data.values)
+                data = self.scaler.transform(df_data.values)                
         else:
             data = df_data.values
             
@@ -286,8 +330,9 @@ class Dataset_Custom(Dataset):
 
 class Dataset_Pred(Dataset):
     def __init__(self, root_path, flag='pred', size=None, 
-                 features='S', data_path='ETTh1.csv', 
-                 target='OT', scale=True, inverse=False, timeenc=0, freq='15min', cols=None):
+                 features='MS', data_path='data.csv', 
+                 target='Close', scale=True, inverse=False, timeenc=0, freq='b', cols=None,
+                 kind_of_scaler = None, test_size = None):
         # size [seq_len, label_len, pred_len]
         # info
         if size == None:
@@ -300,7 +345,10 @@ class Dataset_Pred(Dataset):
             self.pred_len = size[2]
         # init
         assert flag in ['pred']
-        
+
+        self.kind_of_scaler = kind_of_scaler if kind_of_scaler is not None else 'Standard'
+        self.test_size = test_size
+        self.train_size = None
         self.features = features
         self.target = target
         self.scale = scale
@@ -336,8 +384,36 @@ class Dataset_Pred(Dataset):
             df_data = df_raw[[self.target]]
 
         if self.scale:
-            self.scaler.fit(df_data.values)
-            data = self.scaler.transform(df_data.values)
+            if self.features=='S' or self.features=='MS':
+                col_scaled = []
+                for col in df_data.columns:
+                    col_data = df_data[[col]].values
+                    if self.kind_of_scaler == 'MinMax':
+                        if col == self.target:
+                            self.scaler = MinMaxScaler()
+                        else:
+                            scaler = MinMaxScaler()
+                    else:
+                        if col == self.target:
+                            self.scaler = StandardScaler()
+                        else:
+                            scaler = StandardScaler()
+                    if col == self.target:
+                        self.scaler.fit(col_data)
+                        joblib.dump(self.scaler, os.path.join(self.root_path, 'scaler.pkl'))
+                        col_temp = self.scaler.transform(col_data)
+                    else:
+                        scaler.fit(col_data)
+                        col_temp = scaler.transform(col_data)
+                    col_scaled.append(col_temp)
+                if len(col_scaled) == 1:
+                    data = col_scaled[0]
+                else:
+                    data = np.concatenate(col_scaled, axis = 1)
+            else:
+                self.scaler = StandardScaler()
+                self.scaler.fit(df_data.values)
+                data = self.scaler.transform(df_data.values)                
         else:
             data = df_data.values
             
