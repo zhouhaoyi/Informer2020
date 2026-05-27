@@ -347,7 +347,12 @@ class Dataset_Pred(Dataset):
         
         df_stamp = pd.DataFrame(columns = ['date'])
         df_stamp.date = list(tmp_stamp.date.values) + list(pred_dates[1:])
-        data_stamp = time_features(df_stamp, timeenc=self.timeenc, freq=self.freq[-1:])
+
+        try:
+            frequency = self.freq[-1:]
+        except:
+            frequency = self.freq.freqstr
+        data_stamp = time_features(df_stamp, timeenc=self.timeenc, freq=frequency)
 
         self.data_x = data[border1:border2]
         if self.inverse:
@@ -355,6 +360,7 @@ class Dataset_Pred(Dataset):
         else:
             self.data_y = data[border1:border2]
         self.data_stamp = data_stamp
+        self.pred_dates = pred_dates
     
     def __getitem__(self, index):
         s_begin = index

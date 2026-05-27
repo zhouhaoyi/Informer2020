@@ -71,6 +71,7 @@ def time_features_from_frequency_str(freq_str: str) -> List[TimeFeature]:
         offsets.Week: [DayOfMonth, WeekOfYear],
         offsets.Day: [DayOfWeek, DayOfMonth, DayOfYear],
         offsets.BusinessDay: [DayOfWeek, DayOfMonth, DayOfYear],
+        offsets.CustomBusinessDay: [DayOfWeek, DayOfMonth, DayOfYear],
         offsets.Hour: [HourOfDay, DayOfWeek, DayOfMonth, DayOfYear],
         offsets.Minute: [
             MinuteOfHour,
@@ -104,6 +105,7 @@ def time_features_from_frequency_str(freq_str: str) -> List[TimeFeature]:
         W   - weekly
         D   - daily
         B   - business days
+        C   - custom business days
         H   - hourly
         T   - minutely
             alias: min
@@ -118,6 +120,7 @@ def time_features(dates, timeenc=1, freq='h'):
     > * w - [month]
     > * d - [month, day, weekday]
     > * b - [month, day, weekday]
+    > * c - [month, day, weekday]
     > * h - [month, day, weekday, hour]
     > * t - [month, day, weekday, hour, *minute]
     > 
@@ -127,6 +130,7 @@ def time_features(dates, timeenc=1, freq='h'):
     > * W - [Day of month, week of year]
     > * D - [Day of week, day of month, day of year]
     > * B - [Day of week, day of month, day of year]
+    > * C - [Day of week, day of month, day of year]
     > * H - [Hour of day, day of week, day of month, day of year]
     > * T - [Minute of hour*, hour of day, day of week, day of month, day of year]
     > * S - [Second of minute, minute of hour, hour of day, day of week, day of month, day of year]
@@ -142,7 +146,8 @@ def time_features(dates, timeenc=1, freq='h'):
         dates['minute'] = dates.minute.map(lambda x:x//15)
         freq_map = {
             'y':[],'m':['month'],'w':['month'],'d':['month','day','weekday'],
-            'b':['month','day','weekday'],'h':['month','day','weekday','hour'],
+            'b':['month','day','weekday'], 'c':['month','day','weekday'],
+            'h':['month','day','weekday','hour'],
             't':['month','day','weekday','hour','minute'],
         }
         return dates[freq_map[freq.lower()]].values
